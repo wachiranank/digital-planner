@@ -11,12 +11,9 @@ export function LineCard({ linked, notify, botId }: { linked: boolean; notify: b
 
   return (
     <section className="rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
-      <h2 className="flex items-center gap-2 font-semibold">
-        <span className="rounded bg-[#06C755] px-1.5 py-0.5 text-xs font-bold text-white">LINE</span> แจ้งเตือนทาง LINE
-      </h2>
 
       {linked ? (
-        <div className="mt-2 space-y-2">
+        <div className="space-y-2">
           <p className="text-emerald-700">✓ เชื่อมแล้ว — พิมพ์ &quot;วันนี้&quot; ในแชทเพื่อดูงานได้ทุกเมื่อ</p>
           <label className="flex items-center justify-between gap-2">
             <span>ส่งแจ้งเตือนทาง LINE</span>
@@ -41,7 +38,7 @@ export function LineCard({ linked, notify, botId }: { linked: boolean; notify: b
           </div>
         </div>
       ) : code ? (
-        <div className="mt-2 space-y-2">
+        <div className="space-y-2">
           <p className="text-stone-600">ส่งรหัสนี้ไปที่ LINE {botId} (หมดอายุใน 15 นาที)</p>
           <p className="rounded-lg bg-stone-100 py-2 text-center font-mono text-2xl font-bold tracking-[0.3em]">{code}</p>
           <a
@@ -62,7 +59,7 @@ export function LineCard({ linked, notify, botId }: { linked: boolean; notify: b
         </div>
       ) : (
         <>
-          <p className="mt-1 text-stone-600">รับแจ้งเตือนงาน สรุปตอนเช้า และดูงานวันนี้ผ่านแชท LINE</p>
+          <p className="text-stone-600">รับแจ้งเตือนงาน สรุปตอนเช้า และดูงานวันนี้ผ่านแชท LINE</p>
           <button
             onClick={() =>
               start(async () => {

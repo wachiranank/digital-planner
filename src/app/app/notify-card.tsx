@@ -80,20 +80,19 @@ export function NotifyCard({
 
   return (
     <section className="rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
-      <h2 className="font-semibold">🔔 การแจ้งเตือน</h2>
 
       {state === "ios-install" && (
-        <p className="mt-1 text-stone-600">
+        <p className="text-stone-600">
           บน iPhone/iPad ต้องติดตั้งแอปก่อน: กดปุ่มแชร์ใน Safari → <b>เพิ่มไปยังหน้าจอโฮม</b> แล้วเปิดแอปจากไอคอน
         </p>
       )}
-      {state === "unsupported" && <p className="mt-1 text-stone-600">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน</p>}
+      {state === "unsupported" && <p className="text-stone-600">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน</p>}
       {state === "denied" && (
-        <p className="mt-1 text-stone-600">การแจ้งเตือนถูกปิดในตั้งค่าเบราว์เซอร์/เครื่อง — เปิดอนุญาตแล้วโหลดหน้าใหม่</p>
+        <p className="text-stone-600">การแจ้งเตือนถูกปิดในตั้งค่าเบราว์เซอร์/เครื่อง — เปิดอนุญาตแล้วโหลดหน้าใหม่</p>
       )}
       {state === "off" && (
         <>
-          <p className="mt-1 text-stone-600">เตือนก่อนเริ่มงานที่ลงเวลาไว้ สรุปงานตอนเช้า และชวนทบทวนทุกวันอาทิตย์</p>
+          <p className="text-stone-600">ยังไม่ได้เปิดบนเครื่องนี้ (เปิดแยกในแต่ละอุปกรณ์)</p>
           <button
             onClick={enable}
             disabled={pending}
@@ -104,7 +103,7 @@ export function NotifyCard({
         </>
       )}
       {state === "on" && (
-        <form action={setReminderPrefs} className="mt-2 space-y-2">
+        <form action={setReminderPrefs} className="space-y-2">
           <label className="flex items-center justify-between gap-2">
             <span>เตือนก่อนเริ่มงาน</span>
             <select
