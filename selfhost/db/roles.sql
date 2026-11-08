@@ -1,8 +1,8 @@
--- NOTE: change to your own passwords for production environments
+-- Set passwords for the roles the services log in with (runs once, on first start).
+-- Only roles that exist in this kit (no edge functions / pooler).
 \set pgpass `echo "$POSTGRES_PASSWORD"`
 
 ALTER USER authenticator WITH PASSWORD :'pgpass';
 ALTER USER pgbouncer WITH PASSWORD :'pgpass';
 ALTER USER supabase_auth_admin WITH PASSWORD :'pgpass';
-ALTER USER supabase_functions_admin WITH PASSWORD :'pgpass';
 ALTER USER supabase_storage_admin WITH PASSWORD :'pgpass';
