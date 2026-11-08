@@ -39,7 +39,7 @@ export default async function PlannerToday() {
   const [{ data }, { data: habitRows }] = await Promise.all([
     supabase
       .from("planner_tasks")
-      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, notes, tag, checklist, recur_id, recur:planner_recurring(rule)")
+      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, notes, tag, checklist, recur_id, recur:planner_recurring(rule, active)")
       .or(`day.eq.${today},and(day.lt.${today},done.eq.false,recur_id.is.null)`)
       .order("created_at"),
     supabase
@@ -52,7 +52,11 @@ export default async function PlannerToday() {
   const tags = await getTags(supabase);
   const tasks = (data ?? []).map((t) => ({
     ...t,
-    rule: (t.recur as unknown as { rule?: string } | null)?.rule ?? null,
+    ...(() => {
+      const r = t.recur as unknown as { rule?: string; active?: boolean } | null;
+      // a stopped rule no longer counts as repeating
+      return r?.active ? { rule: r.rule ?? null } : { rule: null, recur_id: null };
+    })(),
   })) as Task[];
   const habits: HabitData[] = (habitRows ?? []).map((h) => ({
     id: h.id,

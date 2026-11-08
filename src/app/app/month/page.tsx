@@ -57,7 +57,7 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
   const [{ data }, tags] = await Promise.all([
     supabase
       .from("planner_tasks")
-      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id, notes, checklist, recur:planner_recurring(rule)")
+      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id, notes, checklist, recur:planner_recurring(rule, active)")
       .gte("day", gridStart)
       .lte("day", gridEnd)
       .order("start_at", { ascending: true, nullsFirst: false })
@@ -66,7 +66,11 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
   ]);
   const tasks = (data ?? []).map((t) => ({
     ...t,
-    rule: (t.recur as unknown as { rule?: string } | null)?.rule ?? null,
+    ...(() => {
+      const r = t.recur as unknown as { rule?: string; active?: boolean } | null;
+      // a stopped rule no longer counts as repeating
+      return r?.active ? { rule: r.rule ?? null } : { rule: null, recur_id: null };
+    })(),
   })) as WeekTaskData[];
 
   const token = await getAccessToken(user.id);
