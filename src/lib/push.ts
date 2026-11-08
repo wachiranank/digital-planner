@@ -1,6 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { supabaseAdmin } from "./supabase/server";
+import { linePush } from "./line";
 
 let configured = false;
 function setup() {
@@ -35,4 +36,23 @@ export async function pushToUser(userId: string, payload: PushPayload): Promise<
     }
   }
   return sent;
+}
+
+/** Web push to every device + LINE message if the user linked LINE. */
+export async function notifyUser(userId: string, payload: PushPayload, opts: { line?: boolean } = {}) {
+  const devices = await pushToUser(userId, payload);
+  let line = false;
+  if (opts.line !== false) {
+    const { data: p } = await supabaseAdmin()
+      .from("planner_profiles")
+      .select("line_user_id, line_notify")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (p?.line_user_id && p.line_notify) {
+      const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+      const link = host ? `\n\nhttps://${host}${payload.url ?? "/app"}` : "";
+      line = await linePush(p.line_user_id, `${payload.title}\n${payload.body}${link}`);
+    }
+  }
+  return { devices, line };
 }

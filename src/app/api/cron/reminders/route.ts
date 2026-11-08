@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { pushToUser } from "@/lib/push";
+import { notifyUser } from "@/lib/push";
 import { TRIAL_DAYS, todayBangkok } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +23,12 @@ export async function GET(req: NextRequest) {
   const isSunday = bkk.getUTCDay() === 0;
 
   // Only users with at least one device, and with a valid license or trial
-  const { data: subs } = await admin.from("planner_push_subs").select("user_id");
-  const userIds = [...new Set((subs ?? []).map((s) => s.user_id as string))];
+  // Users reachable by web push or LINE
+  const [{ data: subs }, { data: lineUsers }] = await Promise.all([
+    admin.from("planner_push_subs").select("user_id"),
+    admin.from("planner_profiles").select("user_id").not("line_user_id", "is", null).eq("line_notify", true),
+  ]);
+  const userIds = [...new Set([...(subs ?? []), ...(lineUsers ?? [])].map((s) => s.user_id as string))];
   if (userIds.length === 0) return NextResponse.json({ ok: true, users: 0 });
 
   const { data: profiles } = await admin
@@ -54,7 +58,7 @@ export async function GET(req: NextRequest) {
     const at = new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }).format(
       new Date(t.start_at),
     );
-    await pushToUser(t.user_id, {
+    await notifyUser(t.user_id, {
       title: mins > 0 ? `⏰ อีก ${mins} นาที · ${at} น.` : `⏰ ถึงเวลาแล้ว · ${at} น.`,
       body: t.title,
       url: "/app",
@@ -84,7 +88,7 @@ export async function GET(req: NextRequest) {
               `วันนี้มี ${list.length} งาน${carried ? ` (ยกมา ${carried})` : ""}`,
               top.length ? `สำคัญ: ${top.slice(0, 3).join(" · ")}` : "ยังไม่ได้เลือกงานสำคัญ 3 อย่าง",
             ].join("\n");
-      await pushToUser(p.user_id, { title: "☀️ สวัสดีตอนเช้า", body, url: "/app", tag: "digest" });
+      await notifyUser(p.user_id, { title: "☀️ สวัสดีตอนเช้า", body, url: "/app", tag: "digest" });
       await admin.from("planner_profiles").update({ last_digest_day: today }).eq("user_id", p.user_id);
       stats.digests++;
     }
@@ -94,7 +98,7 @@ export async function GET(req: NextRequest) {
   if (isSunday && minutesOfDay >= 18 * 60 && minutesOfDay < 22 * 60) {
     for (const p of active) {
       if (p.last_review_nudge === today) continue;
-      await pushToUser(p.user_id, {
+      await notifyUser(p.user_id, {
         title: "📝 ทบทวนสัปดาห์",
         body: "ใช้ 5 นาทีดูว่าสัปดาห์นี้ทำอะไรสำเร็จ และตั้งโฟกัสสัปดาห์หน้า",
         url: "/app/review",

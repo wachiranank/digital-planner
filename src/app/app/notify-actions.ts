@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { pushToUser } from "@/lib/push";
+import { linePush } from "@/lib/line";
 
 async function me() {
   const supabase = await supabaseServer();
@@ -52,4 +53,37 @@ export async function setReminderPrefs(form: FormData) {
     .update({ remind_minutes: minutes, daily_digest: form.get("daily_digest") === "on" })
     .eq("user_id", user.id);
   revalidatePath("/app", "layout");
+}
+
+// ---- LINE ----
+export async function createLineLinkCode() {
+  const user = await me();
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  const code = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+  const expires = new Date(Date.now() + 15 * 60e3).toISOString();
+  const { error } = await supabaseAdmin()
+    .from("planner_profiles")
+    .update({ line_link_code: code, line_link_expires: expires })
+    .eq("user_id", user.id);
+  return error ? { code: null } : { code };
+}
+
+export async function unlinkLine() {
+  const user = await me();
+  await supabaseAdmin().from("planner_profiles").update({ line_user_id: null }).eq("user_id", user.id);
+  revalidatePath("/app", "layout");
+}
+
+export async function setLineNotify(on: boolean) {
+  const user = await me();
+  await supabaseAdmin().from("planner_profiles").update({ line_notify: on }).eq("user_id", user.id);
+  revalidatePath("/app", "layout");
+}
+
+export async function sendTestLine() {
+  const user = await me();
+  const { data: p } = await supabaseAdmin().from("planner_profiles").select("line_user_id").eq("user_id", user.id).maybeSingle();
+  if (!p?.line_user_id) return { ok: false };
+  return { ok: await linePush(p.line_user_id, "🔔 ทดสอบการแจ้งเตือนทาง LINE — เรียบร้อย!") };
 }

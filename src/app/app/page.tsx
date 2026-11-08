@@ -8,6 +8,8 @@ import { addTask } from "./actions";
 import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
 import { NotifyCard } from "./notify-card";
+import { LineCard } from "./line-card";
+import { lineBotId, lineConfigured } from "@/lib/line";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,7 @@ export default async function PlannerToday() {
   const today = todayBangkok();
   const { data: prefs } = await supabase
     .from("planner_profiles")
-    .select("remind_minutes, daily_digest")
+    .select("remind_minutes, daily_digest, line_user_id, line_notify")
     .eq("user_id", user.id)
     .maybeSingle();
   const vapidKey = process.env.VAPID_PUBLIC_KEY ?? "";
@@ -150,6 +152,9 @@ export default async function PlannerToday() {
               remindMinutes={prefs?.remind_minutes ?? 10}
               dailyDigest={prefs?.daily_digest ?? true}
             />
+          )}
+          {lineConfigured() && lineBotId() && (
+            <LineCard linked={!!prefs?.line_user_id} notify={prefs?.line_notify ?? true} botId={lineBotId()} />
           )}
         </div>
 

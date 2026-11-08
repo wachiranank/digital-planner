@@ -9,7 +9,10 @@ Next.js (Vercel) + Supabase (โปรเจกต์เดียวกับร
 - [x] Phase 3 — ซิงก์ Google Calendar: ดูนัดวันนี้, กด ⏰ ลงเวลางาน → สร้าง event, เสร็จ/ลบ/ย้ายเวลา สะท้อนทั้ง 2 ฝั่ง (ต้องมี `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, เปิด Calendar API, รัน `0002_google_tokens.sql`)
 - [x] Phase 4 — มุมมองสัปดาห์ (ย้ายงานข้ามวัน, ดูนัดทั้งสัปดาห์), layout 2 คอลัมน์บน iPad/คอม, PWA ติดตั้งลงหน้าจอได้ + หน้าออฟไลน์
 - [x] Phase 5 — แจ้งเตือน Web Push (เตือนก่อนเริ่มงาน, สรุปเช้า 07:30, ชวนทบทวนวันอาทิตย์ 18:00) + หน้า "ทบทวน" รายสัปดาห์ (สถิติ, งานค้าง → ย้ายไปจันทร์หน้า, บันทึก + โฟกัสสัปดาห์หน้า)
-- [ ] ถัดไป — แจ้งเตือนผ่าน LINE OA (ต้องสร้าง LINE Official Account), เขียนด้วย Apple Pencil
+- [x] Phase 6 (โค้ดพร้อม) — LINE OA: เชื่อมบัญชีด้วยรหัส 6 ตัว, แจ้งเตือนทาง LINE คู่กับ Web Push, พิมพ์ "วันนี้" ในแชทเพื่อดูงาน
+  - รัน `0004_line.sql`, ตั้ง env `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_BOT_BASIC_ID`
+  - Webhook URL: `https://<your-app>/api/line/webhook`
+- [ ] ถัดไป — เขียนด้วย Apple Pencil
 
 ### ตั้งค่า Phase 5
 1. รัน `supabase/migrations/0003_reminders_review.sql`
