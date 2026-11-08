@@ -127,8 +127,10 @@ export async function scheduleTask(form: FormData) {
   const token = await getAccessToken(user.id);
   if (!token) redirect("/app?calendar=connect");
 
-  // planned for today (carried-over tasks move to today when scheduled)
-  const day = todayBangkok();
+  // the day chosen in the form (week/month popup), otherwise today
+  // (carried-over tasks move to today when scheduled from the Today page)
+  const dayIn = form.get("day");
+  const day = isDay(dayIn) ? dayIn : todayBangkok();
   const start = new Date(`${day}T${time}:00+07:00`);
   const end = new Date(start.getTime() + minutes * 60_000);
 

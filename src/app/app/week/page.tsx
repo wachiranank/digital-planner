@@ -40,12 +40,15 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
 
   const { data } = await supabase
     .from("planner_tasks")
-    .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id")
+    .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id, notes, checklist, recur:planner_recurring(rule)")
     .gte("day", monday)
     .lte("day", sunday)
     .order("start_at", { ascending: true, nullsFirst: false })
     .order("created_at");
-  const tasks = (data ?? []) as WeekTaskData[];
+  const tasks = (data ?? []).map((t) => ({
+    ...t,
+    rule: (t.recur as unknown as { rule?: string } | null)?.rule ?? null,
+  })) as WeekTaskData[];
   const tags = await getTags(supabase);
 
   const token = await getAccessToken(user.id);
@@ -118,7 +121,7 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
 
               <ul className="mt-2 flex-1 space-y-1">
                 {dayTasks.map((t) => (
-                  <WeekTask key={t.id} task={t} days={days} tags={tags} />
+                  <WeekTask key={t.id} task={t} days={days} tags={tags} calendar={!!token} />
                 ))}
               </ul>
 

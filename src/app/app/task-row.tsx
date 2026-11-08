@@ -149,7 +149,7 @@ export function TaskRow({ task, calendar, tags }: { task: Task; calendar: boolea
   );
 }
 
-function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[]; onSaved: () => void }) {
+export function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[]; onSaved: () => void }) {
   const [pending, start] = useTransition();
   const [selTag, setSelTag] = useState<string>(task.tag ?? "");
   const [adding, setAdding] = useState(false);

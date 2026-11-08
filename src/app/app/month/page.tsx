@@ -9,6 +9,7 @@ import { findTag, tagStyle } from "@/lib/tags";
 import { addTask } from "../actions";
 import { AppNav } from "../nav";
 import { WeekTask, type WeekTaskData } from "../week/week-task";
+import { MonthChip } from "./month-chip";
 
 export const dynamic = "force-dynamic";
 
@@ -56,14 +57,17 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
   const [{ data }, tags] = await Promise.all([
     supabase
       .from("planner_tasks")
-      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id")
+      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id, notes, checklist, recur:planner_recurring(rule)")
       .gte("day", gridStart)
       .lte("day", gridEnd)
       .order("start_at", { ascending: true, nullsFirst: false })
       .order("created_at"),
     getTags(supabase),
   ]);
-  const tasks = (data ?? []) as WeekTaskData[];
+  const tasks = (data ?? []).map((t) => ({
+    ...t,
+    rule: (t.recur as unknown as { rule?: string } | null)?.rule ?? null,
+  })) as WeekTaskData[];
 
   const token = await getAccessToken(user.id);
   let events: GEvent[] = [];
@@ -120,54 +124,59 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
             {days.map((d) => {
               const dt = tasks.filter((t) => t.day === d);
               const de = otherEvents.filter((e) => eventDay(e) === d);
-              const items = [
-                ...de.map((e) => ({ key: e.id, label: e.summary ?? "(ไม่มีชื่อ)", dot: "bg-sky-400", done: false, event: true })),
-                ...dt.map((t) => {
-                  const st = tagStyle(findTag(tags, t.tag));
-                  return { key: t.id, label: t.title, dot: st?.dot ?? "bg-stone-400", done: t.done, event: false };
-                }),
-              ];
               const isSel = d === selected;
               const isToday = d === today;
+              const total = de.length + dt.length;
+              const shownEvents = de.slice(0, 3);
+              const shownTasks = dt.slice(0, Math.max(0, 3 - shownEvents.length));
               return (
-                <Link
+                <div
                   key={d}
-                  href={href(d)}
-                  scroll={false}
-                  className={`min-h-16 border-b border-r border-stone-100 p-1 text-left align-top sm:min-h-24 md:min-h-28 ${
+                  className={`relative min-h-16 border-b border-r border-stone-100 p-1 text-left sm:min-h-24 md:min-h-28 ${
                     inMonth(d) ? "" : "bg-stone-50/70 text-stone-400"
                   } ${isSel ? "bg-emerald-50 ring-2 ring-inset ring-emerald-500" : "hover:bg-stone-50"}`}
-                  aria-label={thaiLongDate(d)}
                 >
+                  {/* the whole cell selects the day; task lines on top open the edit popup */}
+                  <Link href={href(d)} scroll={false} className="absolute inset-0" aria-label={thaiLongDate(d)} />
                   <span
-                    className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-semibold ${
+                    className={`pointer-events-none relative inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-semibold ${
                       isToday ? "bg-emerald-600 text-white" : ""
                     }`}
                   >
                     {Number(d.slice(8, 10))}
                   </span>
-                  {/* phone: dots only */}
-                  <div className="mt-0.5 flex flex-wrap gap-0.5 sm:hidden">
-                    {items.slice(0, 6).map((it) => (
-                      <span key={it.key} className={`h-1.5 w-1.5 rounded-full ${it.dot} ${it.done ? "opacity-30" : ""}`} />
+                  {/* phone: dots only (tap the day, then edit from the list below) */}
+                  <div className="pointer-events-none relative mt-0.5 flex flex-wrap gap-0.5 sm:hidden">
+                    {de.slice(0, 6).map((e) => (
+                      <span key={e.id} className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                    ))}
+                    {dt.slice(0, Math.max(0, 6 - de.length)).map((t) => (
+                      <span
+                        key={t.id}
+                        className={`h-1.5 w-1.5 rounded-full ${tagStyle(findTag(tags, t.tag))?.dot ?? "bg-stone-400"} ${t.done ? "opacity-30" : ""}`}
+                      />
                     ))}
                   </div>
-                  {/* iPad / desktop: titles */}
-                  <ul className="mt-0.5 hidden space-y-0.5 sm:block">
-                    {items.slice(0, 3).map((it) => (
-                      <li
-                        key={it.key}
-                        className={`flex items-center gap-1 truncate text-[11px] leading-4 ${it.event ? "text-sky-800" : ""} ${
-                          it.done ? "text-stone-400 line-through" : ""
-                        }`}
-                      >
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${it.dot}`} />
-                        <span className="truncate">{it.label}</span>
-                      </li>
+                  {/* iPad / desktop: titles; tap a task to edit it */}
+                  <div className="relative mt-0.5 hidden space-y-0.5 sm:block">
+                    {shownEvents.map((e) => (
+                      <p key={e.id} className="pointer-events-none flex items-center gap-1 truncate text-[11px] leading-4 text-sky-800">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
+                        <span className="truncate">{e.summary ?? "(ไม่มีชื่อ)"}</span>
+                      </p>
                     ))}
-                    {items.length > 3 && <li className="text-[11px] text-stone-500">+{items.length - 3} อื่นๆ</li>}
-                  </ul>
-                </Link>
+                    {shownTasks.map((t) => (
+                      <MonthChip
+                        key={t.id}
+                        task={t}
+                        tags={tags}
+                        calendar={!!token}
+                        dot={tagStyle(findTag(tags, t.tag))?.dot ?? "bg-stone-400"}
+                      />
+                    ))}
+                    {total > 3 && <p className="pointer-events-none text-[11px] text-stone-500">+{total - 3} อื่นๆ</p>}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -188,7 +197,7 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
           <ul className="mt-3 space-y-1">
             {selTasks.length === 0 && selEvents.length === 0 && <li className="text-sm text-stone-400">ยังไม่มีงานวันนี้</li>}
             {selTasks.map((t) => (
-              <WeekTask key={t.id} task={t} days={selWeek} tags={tags} />
+              <WeekTask key={t.id} task={t} days={selWeek} tags={tags} calendar={!!token} />
             ))}
           </ul>
           <form action={addTask} className="mt-3 flex gap-2">
