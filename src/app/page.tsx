@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { GoogleButton } from "./google-button";
+import { publicStoreUrl } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ n
     .eq("is_active", true)
     .maybeSingle();
   const price = product ? Math.round(product.price_satang / 100).toLocaleString("th-TH") : null;
-  const storeUrl = process.env.NEXT_PUBLIC_STORE_URL;
+  const storeUrl = publicStoreUrl();
 
   return (
     <main className="mx-auto max-w-5xl px-5">

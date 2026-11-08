@@ -1,0 +1,25 @@
+{
+	email {$ADMIN_EMAIL}
+}
+
+{$PLANNER_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy planner:3000
+}
+
+{$STORE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy store:3000
+}
+
+# Supabase-compatible API: /auth/v1 → login service, /rest/v1 → database API
+{$API_DOMAIN} {
+	encode zstd gzip
+	handle_path /auth/v1/* {
+		reverse_proxy auth:9999
+	}
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000
+	}
+	respond "not found" 404
+}

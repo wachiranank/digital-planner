@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess } from "@/lib/access";
 import { activateLicense } from "./actions";
+import { publicStoreUrl } from "@/lib/env";
 
 const ERRORS: Record<string, string> = {
   invalid: "license key ไม่ถูกต้อง หรือถูกยกเลิกแล้ว",
@@ -20,7 +21,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
   const access = await getAccess(user.id, user.email);
   if (access.status === "licensed") redirect("/app");
 
-  const storeUrl = process.env.NEXT_PUBLIC_STORE_URL;
+  const storeUrl = publicStoreUrl();
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6">

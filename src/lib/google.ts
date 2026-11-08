@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase/server";
+import { appHost } from "./env";
 
 export const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 const API = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
@@ -88,9 +89,9 @@ export async function createEvent(token: string, summary: string, startISO: stri
       summary,
       start: { dateTime: startISO, timeZone: TZ },
       end: { dateTime: endISO, timeZone: TZ },
-      // link back to the planner from the event (Vercel system env, e.g. "digital-planner-azure.vercel.app")
-      ...(process.env.VERCEL_PROJECT_PRODUCTION_URL && {
-        source: { title: "Digital Planner", url: `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/app` },
+      // link back to the planner from the event
+      ...(appHost() && {
+        source: { title: "Digital Planner", url: `https://${appHost()}/app` },
       }),
     }),
   });

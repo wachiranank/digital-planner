@@ -2,6 +2,7 @@ import "server-only";
 import webpush from "web-push";
 import { supabaseAdmin } from "./supabase/server";
 import { linePush } from "./line";
+import { appHost } from "./env";
 
 let configured = false;
 function setup() {
@@ -49,7 +50,7 @@ export async function notifyUser(userId: string, payload: PushPayload, opts: { l
       .eq("user_id", userId)
       .maybeSingle();
     if (p?.line_user_id && p.line_notify) {
-      const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+      const host = appHost();
       const link = host ? `\n\nhttps://${host}${payload.url ?? "/app"}` : "";
       line = await linePush(p.line_user_id, `${payload.title}\n${payload.body}${link}`);
     }

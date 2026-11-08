@@ -46,3 +46,7 @@ iPhone/iPad: การแจ้งเตือนทำงานเมื่อ�
 - ผู้ใช้อ่านได้เฉพาะ profile และ task ของตัวเอง (RLS)
 - `license_key` เขียนได้จาก server เท่านั้น (secret key) — ผู้ใช้ปลอม license เองไม่ได้
 - การตรวจ license เรียก `STORE_URL/api/license/activate` โดยใช้ `planner:<user_id>` เป็น device id
+
+
+## Self-host บน VPS
+ดูโฟลเดอร์ [`selfhost/`](selfhost/README.md) — Docker image สร้างอัตโนมัติด้วย GitHub Actions ไปที่ `ghcr.io/wachiranank/digital-planner`
