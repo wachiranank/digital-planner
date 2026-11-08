@@ -20,7 +20,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
-  const access = await getAccess(user.id);
+  const access = await getAccess(user.id, user.email);
   if (access.status === "expired") redirect("/activate");
 
   const offset = Math.max(-52, Math.min(0, Number((await searchParams).w ?? 0) || 0));

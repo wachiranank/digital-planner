@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
+import { activateWithStore } from "@/lib/access";
 
 export async function activateLicense(form: FormData) {
   const key = String(form.get("key") ?? "").trim().toUpperCase();
@@ -13,14 +14,7 @@ export async function activateLicense(form: FormData) {
 
   let result: { valid?: boolean; error?: string };
   try {
-    const res = await fetch(`${process.env.STORE_URL}/api/license/activate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // one activation per planner account
-      body: JSON.stringify({ key, device_id: `planner:${user.id}` }),
-      cache: "no-store",
-    });
-    result = await res.json();
+    result = await activateWithStore(user.id, key);
   } catch {
     redirect("/activate?error=network");
   }

@@ -9,14 +9,15 @@ const ERRORS: Record<string, string> = {
   network: "เชื่อมต่อระบบตรวจ license ไม่ได้ ลองใหม่อีกครั้ง",
 };
 
-export default async function Activate({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function Activate({ searchParams }: { searchParams: Promise<{ error?: string; key?: string }> }) {
+  const { error, key } = await searchParams;
+  const prefill = /^DPS-[A-Z0-9-]{4,20}$/i.test(key ?? "") ? key!.toUpperCase() : "";
   const supabase = await supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
-  const access = await getAccess(user.id);
+  const access = await getAccess(user.id, user.email);
   if (access.status === "licensed") redirect("/app");
 
   const storeUrl = process.env.NEXT_PUBLIC_STORE_URL;
@@ -34,6 +35,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
         <input
           name="key"
           required
+          defaultValue={prefill}
           placeholder="DPS-XXXX-XXXX-XXXX"
           autoCapitalize="characters"
           className="w-full rounded-lg border border-stone-300 px-3 py-3 font-mono tracking-wider uppercase"

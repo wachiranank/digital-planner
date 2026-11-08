@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveRefreshToken } from "@/lib/google";
 
@@ -13,5 +14,10 @@ export async function GET(request: Request) {
     const refresh = data.session?.provider_refresh_token;
     if (data.user && refresh) await saveRefreshToken(data.user.id, refresh);
   }
-  return NextResponse.redirect(new URL("/app", url.origin));
+  const jar = await cookies();
+  const next = decodeURIComponent(jar.get("after_login")?.value ?? "");
+  const dest = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
+  const res = NextResponse.redirect(new URL(dest, url.origin));
+  res.cookies.delete("after_login");
+  return res;
 }

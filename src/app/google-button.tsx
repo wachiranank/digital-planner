@@ -4,9 +4,20 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
-export function GoogleButton({ label = "เข้าสู่ระบบด้วย Google", variant = "primary" }: { label?: string; variant?: "primary" | "subtle" }) {
-  const signIn = () =>
-    supabaseBrowser().auth.signInWithOAuth({
+export function GoogleButton({
+  label = "เข้าสู่ระบบด้วย Google",
+  variant = "primary",
+  next,
+}: {
+  label?: string;
+  variant?: "primary" | "subtle";
+  next?: string;
+}) {
+  const signIn = () => {
+    if (next?.startsWith("/") && !next.startsWith("//")) {
+      document.cookie = `after_login=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax; secure`;
+    }
+    return supabaseBrowser().auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
@@ -15,6 +26,7 @@ export function GoogleButton({ label = "เข้าสู่ระบบด้�
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
+  };
 
   return (
     <button

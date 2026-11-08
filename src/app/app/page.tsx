@@ -20,7 +20,7 @@ export default async function PlannerToday() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const access = await getAccess(user.id);
+  const access = await getAccess(user.id, user.email);
   if (access.status === "expired") redirect("/activate");
 
   const today = todayBangkok();

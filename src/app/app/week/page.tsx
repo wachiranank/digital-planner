@@ -21,7 +21,7 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
-  const access = await getAccess(user.id);
+  const access = await getAccess(user.id, user.email);
   if (access.status === "expired") redirect("/activate");
 
   const offset = Math.max(-52, Math.min(52, Number((await searchParams).w ?? 0) || 0));

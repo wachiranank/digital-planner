@@ -25,7 +25,9 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   if (!user && (path.startsWith("/app") || path.startsWith("/activate"))) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const login = new URL("/", request.url);
+    login.searchParams.set("next", path + request.nextUrl.search);
+    return NextResponse.redirect(login);
   }
   return response;
 }
