@@ -7,6 +7,7 @@ import { GoogleButton } from "../google-button";
 import { addTask } from "./actions";
 import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
+import { NotifyCard } from "./notify-card";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,12 @@ export default async function PlannerToday() {
   if (access.status === "expired") redirect("/activate");
 
   const today = todayBangkok();
+  const { data: prefs } = await supabase
+    .from("planner_profiles")
+    .select("remind_minutes, daily_digest")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const vapidKey = process.env.VAPID_PUBLIC_KEY ?? "";
   // Today's tasks + every unfinished task from earlier days (auto carry-over)
   const { data } = await supabase
     .from("planner_tasks")
@@ -136,6 +143,13 @@ export default async function PlannerToday() {
                 ))}
               </ol>
             </section>
+          )}
+          {vapidKey && (
+            <NotifyCard
+              vapidKey={vapidKey}
+              remindMinutes={prefs?.remind_minutes ?? 10}
+              dailyDigest={prefs?.daily_digest ?? true}
+            />
           )}
         </div>
 

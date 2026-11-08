@@ -8,7 +8,26 @@ Next.js (Vercel) + Supabase (โปรเจกต์เดียวกับร
 - [x] Phase 2 (เริ่มต้น) — หน้า "วันนี้": งานสำคัญ 3 อย่าง, ยกงานค้าง, เสร็จ/ลบ, วันที่แบบ พ.ศ.
 - [x] Phase 3 — ซิงก์ Google Calendar: ดูนัดวันนี้, กด ⏰ ลงเวลางาน → สร้าง event, เสร็จ/ลบ/ย้ายเวลา สะท้อนทั้ง 2 ฝั่ง (ต้องมี `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, เปิด Calendar API, รัน `0002_google_tokens.sql`)
 - [x] Phase 4 — มุมมองสัปดาห์ (ย้ายงานข้ามวัน, ดูนัดทั้งสัปดาห์), layout 2 คอลัมน์บน iPad/คอม, PWA ติดตั้งลงหน้าจอได้ + หน้าออฟไลน์
-- [ ] Phase 5 — แจ้งเตือน LINE + weekly review
+- [x] Phase 5 — แจ้งเตือน Web Push (เตือนก่อนเริ่มงาน, สรุปเช้า 07:30, ชวนทบทวนวันอาทิตย์ 18:00) + หน้า "ทบทวน" รายสัปดาห์ (สถิติ, งานค้าง → ย้ายไปจันทร์หน้า, บันทึก + โฟกัสสัปดาห์หน้า)
+- [ ] ถัดไป — แจ้งเตือนผ่าน LINE OA (ต้องสร้าง LINE Official Account), เขียนด้วย Apple Pencil
+
+### ตั้งค่า Phase 5
+1. รัน `supabase/migrations/0003_reminders_review.sql`
+2. ตั้ง env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET` (สร้างคีย์: `npx web-push generate-vapid-keys`)
+3. ตั้ง cron ใน Supabase (SQL editor) — เก็บ secret ใน Vault แล้วเรียก endpoint ทุก 5 นาที:
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+select vault.create_secret('<CRON_SECRET>', 'planner_cron_secret');
+select cron.schedule('planner-reminders', '*/5 * * * *', $$
+  select net.http_get(
+    url := 'https://<your-app>/api/cron/reminders',
+    headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'planner_cron_secret')),
+    timeout_milliseconds := 30000
+  );
+$$);
+```
+iPhone/iPad: การแจ้งเตือนทำงานเมื่อติดตั้งแอปลงหน้าจอโฮมแล้ว (iOS 16.4+)
 
 ## ติดตั้ง
 1. Supabase → SQL Editor → รัน `supabase/migrations/0001_planner.sql`

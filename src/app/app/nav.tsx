@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { signOut } from "./actions";
 
-export function AppNav({ active }: { active: "today" | "week" }) {
+export function AppNav({ active }: { active: "today" | "week" | "review" }) {
   const tab = (href: string, label: string, on: boolean) => (
     <Link
       href={href}
@@ -15,6 +15,7 @@ export function AppNav({ active }: { active: "today" | "week" }) {
       <div className="flex gap-1 rounded-xl bg-stone-200/60 p-1">
         {tab("/app", "วันนี้", active === "today")}
         {tab("/app/week", "สัปดาห์", active === "week")}
+        {tab("/app/review", "ทบทวน", active === "review")}
       </div>
       <form action={signOut}>
         <button className="text-sm text-stone-500 underline">ออกจากระบบ</button>

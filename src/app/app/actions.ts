@@ -53,7 +53,7 @@ export async function moveTask(id: string, newDay: string) {
     const shift = Date.parse(`${newDay}T00:00:00+07:00`) - Date.parse(`${task.day}T00:00:00+07:00`);
     const start = new Date(Date.parse(task.start_at) + shift).toISOString();
     const end = new Date(Date.parse(task.end_at) + shift).toISOString();
-    Object.assign(update, { start_at: start, end_at: end });
+    Object.assign(update, { start_at: start, end_at: end, reminded_at: null });
     if (task.gcal_event_id) {
       const token = await getAccessToken(user.id);
       if (token) {
@@ -141,7 +141,7 @@ export async function scheduleTask(form: FormData) {
 
   await supabase
     .from("planner_tasks")
-    .update({ day, start_at: start.toISOString(), end_at: end.toISOString(), gcal_event_id: eventId })
+    .update({ day, start_at: start.toISOString(), end_at: end.toISOString(), gcal_event_id: eventId, reminded_at: null })
     .eq("id", id);
   revalidatePath("/app", "layout");
 }
@@ -154,6 +154,36 @@ export async function unscheduleTask(id: string) {
     if (token) await deleteEvent(token, task.gcal_event_id).catch(() => {});
   }
   await supabase.from("planner_tasks").update({ start_at: null, end_at: null, gcal_event_id: null }).eq("id", id);
+  revalidatePath("/app", "layout");
+}
+
+/** Weekly review: save reflection notes for the week starting `week_start` (a Monday). */
+export async function saveReview(form: FormData) {
+  const week_start = form.get("week_start");
+  if (!isDay(week_start)) return;
+  const clip = (k: string) => String(form.get(k) ?? "").slice(0, 2000).trim() || null;
+  const { supabase, user } = await db();
+  await supabase.from("planner_reviews").upsert(
+    { user_id: user.id, week_start, wins: clip("wins"), improve: clip("improve"), focus: clip("focus"), updated_at: new Date().toISOString() },
+    { onConflict: "user_id,week_start" },
+  );
+  revalidatePath("/app", "layout");
+}
+
+/** Weekly review: push every unfinished task of a week to the following Monday. */
+export async function moveOpenToNextWeek(form: FormData) {
+  const monday = form.get("week_start");
+  if (!isDay(monday)) return;
+  const sunday = new Date(Date.parse(`${monday}T12:00:00Z`) + 6 * 864e5).toISOString().slice(0, 10);
+  const next = new Date(Date.parse(`${monday}T12:00:00Z`) + 7 * 864e5).toISOString().slice(0, 10);
+  const { supabase } = await db();
+  const { data } = await supabase
+    .from("planner_tasks")
+    .select("id")
+    .eq("done", false)
+    .gte("day", monday)
+    .lte("day", sunday);
+  for (const t of data ?? []) await moveTask(t.id, next);
   revalidatePath("/app", "layout");
 }
 
