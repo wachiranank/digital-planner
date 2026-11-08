@@ -12,7 +12,8 @@ Next.js (Vercel) + Supabase (โปรเจกต์เดียวกับร
 - [x] Phase 6 (โค้ดพร้อม) — LINE OA: เชื่อมบัญชีด้วยรหัส 6 ตัว, แจ้งเตือนทาง LINE คู่กับ Web Push, พิมพ์ "วันนี้" ในแชทเพื่อดูงาน
   - รัน `0004_line.sql`, ตั้ง env `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_BOT_BASIC_ID`
   - Webhook URL: `https://<your-app>/api/line/webhook`
-- [ ] ถัดไป — เขียนด้วย Apple Pencil
+- [x] Batch 1 — งานทำซ้ำ (ทุกวัน/วันทำงาน/สัปดาห์/เดือน), โน้ต + เช็กลิสต์ + หมวดสี, ติดตามนิสัย (streak), เพิ่มงานภาษาไทย ("ประชุม พรุ่งนี้ บ่าย 2 1 ชม.") ทั้งในแอปและ LINE ("เพิ่ม ...") — รัน `0005_batch1.sql`
+- [ ] Batch 2 — ไทม์ไลน์รายวัน (ลากลงช่องเวลา), เป้าหมายรายเดือน, จับเวลาโฟกัส, บันทึกประจำวัน
 
 ### ตั้งค่า Phase 5
 1. รัน `supabase/migrations/0003_reminders_review.sql`

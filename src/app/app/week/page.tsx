@@ -6,6 +6,7 @@ import { eventDay, getAccessToken, hhmm, listRangeEvents, type GEvent } from "@/
 import { addTask } from "../actions";
 import { AppNav } from "../nav";
 import { WeekTask, type WeekTaskData } from "./week-task";
+import { ensureRecurring } from "@/lib/tasks";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +32,14 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const sunday = days[6];
 
+  // repeating tasks: keep a week ahead, and fill the viewed week (up to ~2 months out)
+  const ahead = addDays(today, 6);
+  const cap = addDays(today, 62);
+  await ensureRecurring(user.id, sunday > ahead ? (sunday < cap ? sunday : cap) : ahead);
+
   const { data } = await supabase
     .from("planner_tasks")
-    .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id")
+    .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, tag, recur_id")
     .gte("day", monday)
     .lte("day", sunday)
     .order("start_at", { ascending: true, nullsFirst: false })

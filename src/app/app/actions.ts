@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { todayBangkok } from "@/lib/access";
 import { createEvent, deleteEvent, getAccessToken, patchEvent } from "@/lib/google";
+import { parseQuick } from "@/lib/thai-parse";
+import { createTaskFor, ensureRecurring, addDays, weekdayIdx } from "@/lib/tasks";
+import { isRule, isTag, type CheckItem } from "@/lib/tags";
 
 async function db() {
   const supabase = await supabaseServer();
@@ -31,9 +34,11 @@ export async function addTask(form: FormData) {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return;
   const dayInput = form.get("day");
-  const day = isDay(dayInput) ? dayInput : todayBangkok();
-  const { supabase } = await db();
-  await supabase.from("planner_tasks").insert({ title, day });
+  const baseDay = isDay(dayInput) ? dayInput : todayBangkok();
+  const { user } = await db();
+  // Thai quick add: "ประชุม พรุ่งนี้ บ่าย 2 1 ชม." → day + time block (+ Google Calendar event)
+  const p = parseQuick(title, todayBangkok());
+  await createTaskFor(user.id, { title: p.title, day: p.day ?? baseDay, time: p.time, minutes: p.minutes });
   revalidatePath("/app", "layout");
 }
 
@@ -184,6 +189,106 @@ export async function moveOpenToNextWeek(form: FormData) {
     .gte("day", monday)
     .lte("day", sunday);
   for (const t of data ?? []) await moveTask(t.id, next);
+  revalidatePath("/app", "layout");
+}
+
+// ---------- task details ----------
+export async function updateTaskDetails(form: FormData) {
+  const id = String(form.get("id"));
+  const title = String(form.get("title") ?? "").trim().slice(0, 500);
+  const notes = String(form.get("notes") ?? "").slice(0, 5000).trim() || null;
+  const tagIn = form.get("tag");
+  const tag = isTag(tagIn) ? tagIn : null;
+  const { supabase, user, task } = await getTask(id);
+  if (!task) return;
+  const update: Record<string, unknown> = { notes, tag };
+  if (title && title !== task.title) {
+    update.title = title;
+    if (task.gcal_event_id) {
+      const token = await getAccessToken(user.id);
+      if (token) await patchEvent(token, task.gcal_event_id, { summary: title }).catch(() => {});
+    }
+  }
+  await supabase.from("planner_tasks").update(update).eq("id", id);
+  revalidatePath("/app", "layout");
+}
+
+export async function setChecklist(id: string, items: CheckItem[]) {
+  const clean = (Array.isArray(items) ? items : [])
+    .slice(0, 50)
+    .map((i) => ({ t: String(i.t ?? "").slice(0, 200), d: !!i.d }))
+    .filter((i) => i.t.trim());
+  const { supabase } = await db();
+  await supabase.from("planner_tasks").update({ checklist: clean }).eq("id", id);
+  revalidatePath("/app", "layout");
+}
+
+/** Make a task repeat (creates a rule from it) or stop repeating ("none"). */
+export async function setRepeat(id: string, rule: string) {
+  const { supabase, user } = await db();
+  const { data: task } = await supabase
+    .from("planner_tasks")
+    .select("id, title, day, tag, recur_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!task) return;
+  const today = todayBangkok();
+
+  if (task.recur_id) {
+    // stop the old rule and remove its future, unfinished copies
+    await supabase.from("planner_recurring").update({ active: false }).eq("id", task.recur_id);
+    await supabase
+      .from("planner_tasks")
+      .delete()
+      .eq("recur_id", task.recur_id)
+      .eq("done", false)
+      .gt("day", task.day > today ? task.day : today)
+      .neq("id", task.id);
+    await supabase.from("planner_tasks").update({ recur_id: null }).eq("id", task.id);
+  }
+  if (isRule(rule)) {
+    const { data: r } = await supabase
+      .from("planner_recurring")
+      .insert({
+        user_id: user.id,
+        title: task.title,
+        tag: task.tag,
+        rule,
+        weekday: weekdayIdx(task.day),
+        month_day: Number(task.day.slice(8, 10)),
+        last_generated: task.day,
+      })
+      .select("id")
+      .single();
+    if (r) {
+      await supabase.from("planner_tasks").update({ recur_id: r.id }).eq("id", task.id);
+      await ensureRecurring(user.id, addDays(today, 6));
+    }
+  }
+  revalidatePath("/app", "layout");
+}
+
+// ---------- habits ----------
+export async function addHabit(form: FormData) {
+  const name = String(form.get("name") ?? "").trim().slice(0, 80);
+  if (!name) return;
+  const emoji = String(form.get("emoji") ?? "").trim().slice(0, 8) || null;
+  const { supabase, user } = await db();
+  await supabase.from("planner_habits").insert({ user_id: user.id, name, emoji });
+  revalidatePath("/app", "layout");
+}
+
+export async function toggleHabit(habitId: string, day: string, on: boolean) {
+  if (!isDay(day) || day > todayBangkok()) return;
+  const { supabase, user } = await db();
+  if (on) await supabase.from("planner_habit_logs").insert({ habit_id: habitId, user_id: user.id, day });
+  else await supabase.from("planner_habit_logs").delete().eq("habit_id", habitId).eq("day", day);
+  revalidatePath("/app", "layout");
+}
+
+export async function archiveHabit(habitId: string) {
+  const { supabase } = await db();
+  await supabase.from("planner_habits").update({ active: false }).eq("id", habitId);
   revalidatePath("/app", "layout");
 }
 

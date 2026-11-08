@@ -8,6 +8,8 @@ import { addTask } from "./actions";
 import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
 import { NotifyCard } from "./notify-card";
+import { HabitsCard, type HabitData } from "./habits-card";
+import { ensureRecurring, addDays } from "@/lib/tasks";
 import { LineCard } from "./line-card";
 import { lineBotId, lineConfigured } from "@/lib/line";
 
@@ -30,13 +32,32 @@ export default async function PlannerToday() {
     .eq("user_id", user.id)
     .maybeSingle();
   const vapidKey = process.env.VAPID_PUBLIC_KEY ?? "";
-  // Today's tasks + every unfinished task from earlier days (auto carry-over)
-  const { data } = await supabase
-    .from("planner_tasks")
-    .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id")
-    .or(`day.eq.${today},and(day.lt.${today},done.eq.false)`)
-    .order("created_at");
-  const tasks = (data ?? []) as Task[];
+  await ensureRecurring(user.id, addDays(today, 6));
+  // Today's tasks + unfinished one-off tasks from earlier days (auto carry-over;
+  // a missed repeating task does not pile up — the next copy is already scheduled)
+  const [{ data }, { data: habitRows }] = await Promise.all([
+    supabase
+      .from("planner_tasks")
+      .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, notes, tag, checklist, recur_id, recur:planner_recurring(rule)")
+      .or(`day.eq.${today},and(day.lt.${today},done.eq.false,recur_id.is.null)`)
+      .order("created_at"),
+    supabase
+      .from("planner_habits")
+      .select("id, name, emoji, planner_habit_logs(day)")
+      .eq("active", true)
+      .gte("planner_habit_logs.day", addDays(today, -90))
+      .order("created_at"),
+  ]);
+  const tasks = (data ?? []).map((t) => ({
+    ...t,
+    rule: (t.recur as unknown as { rule?: string } | null)?.rule ?? null,
+  })) as Task[];
+  const habits: HabitData[] = (habitRows ?? []).map((h) => ({
+    id: h.id,
+    name: h.name,
+    emoji: h.emoji,
+    days: ((h.planner_habit_logs ?? []) as { day: string }[]).map((l) => l.day),
+  }));
 
   // ---- Google Calendar: read today's events and pull changes made in Google ----
   const token = await getAccessToken(user.id);
@@ -146,6 +167,7 @@ export default async function PlannerToday() {
               </ol>
             </section>
           )}
+          <HabitsCard habits={habits} today={today} />
           {vapidKey && (
             <NotifyCard
               vapidKey={vapidKey}
@@ -164,7 +186,7 @@ export default async function PlannerToday() {
               name="title"
               required
               maxLength={500}
-              placeholder="เพิ่มงานวันนี้..."
+              placeholder="เพิ่มงาน… เช่น ประชุมลูกค้า พรุ่งนี้ บ่าย 2"
               className="flex-1 rounded-xl border border-stone-300 bg-white px-4 py-3"
             />
             <button className="rounded-xl bg-emerald-600 px-5 font-semibold text-white hover:bg-emerald-700">เพิ่ม</button>

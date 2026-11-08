@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { lineReply, verifyLineSignature } from "@/lib/line";
 import { todayBangkok } from "@/lib/access";
+import { parseQuick } from "@/lib/thai-parse";
+import { createTaskFor } from "@/lib/tasks";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,7 @@ type LineEvent = {
 };
 
 const HELP =
-  "พิมพ์ \"วันนี้\" เพื่อดูงานวันนี้\n\nยังไม่ได้เชื่อมบัญชี? เปิดแอป → หน้าวันนี้ → \"เชื่อม LINE\" แล้วส่งรหัส 6 ตัวมาที่แชทนี้";
+  "• พิมพ์ \"วันนี้\" เพื่อดูงานวันนี้\n• พิมพ์ \"เพิ่ม ...\" เพื่อเพิ่มงาน เช่น\n  เพิ่ม ประชุมลูกค้า พรุ่งนี้ บ่าย 2 1 ชม.\n\nยังไม่ได้เชื่อมบัญชี? เปิดแอป → หน้าวันนี้ → \"เชื่อม LINE\" แล้วส่งรหัส 6 ตัวมาที่แชทนี้";
 
 export async function POST(req: NextRequest) {
   const raw = await req.text();
@@ -83,7 +85,34 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    await lineReply(ev.replyToken, HELP);
+    // 3) quick add: "เพิ่ม ประชุม พรุ่งนี้ 10 โมง" / "+ ซื้อของ"
+    const add = text.match(/^(?:เพิ่ม|\+|add)\s*(.+)$/i);
+    if (me && add) {
+      const today = todayBangkok();
+      const p = parseQuick(add[1], today);
+      const day = p.day ?? today;
+      const created = await createTaskFor(me.user_id, { title: p.title, day, time: p.time, minutes: p.minutes });
+      if (!created) {
+        await lineReply(ev.replyToken, "เพิ่มงานไม่สำเร็จ ลองอีกครั้ง");
+        continue;
+      }
+      const when =
+        day === today
+          ? "วันนี้"
+          : new Intl.DateTimeFormat("th-TH", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(
+              new Date(`${day}T12:00:00Z`),
+            );
+      const hm = (iso: string) =>
+        new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }).format(new Date(iso));
+      const slot = created.start && created.end ? ` ${hm(created.start)}–${hm(created.end)}` : "";
+      await lineReply(
+        ev.replyToken,
+        `✅ เพิ่มแล้ว: ${p.title}\n📅 ${when}${slot}${created.calendar ? "\n🗓️ ลง Google Calendar แล้ว" : ""}`,
+      );
+      continue;
+    }
+
+    await lineReply(ev.replyToken, me ? HELP : `ยังไม่ได้เชื่อมบัญชี — เปิดแอป → หน้าวันนี้ → "เชื่อม LINE" แล้วส่งรหัส 6 ตัวมาที่แชทนี้`);
   }
   return NextResponse.json({ ok: true });
 }

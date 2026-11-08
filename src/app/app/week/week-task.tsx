@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { moveTask, toggleDone } from "../actions";
+import { TAGS, isTag } from "@/lib/tags";
 
 export type WeekTaskData = {
   id: string;
@@ -12,6 +13,8 @@ export type WeekTaskData = {
   start_at: string | null;
   end_at: string | null;
   gcal_event_id: string | null;
+  tag?: string | null;
+  recur_id?: string | null;
 };
 
 const hhmm = (iso: string) =>
@@ -33,9 +36,13 @@ export function WeekTask({ task, days }: { task: WeekTaskData; days: string[] })
         aria-label="ทำเสร็จแล้ว"
       />
       <span className={`flex-1 ${task.done ? "text-stone-400 line-through" : ""}`}>
+        {isTag(task.tag) && (
+          <span className={`mr-1 inline-block h-2 w-2 rounded-full align-middle ${TAGS[task.tag].dot}`} title={TAGS[task.tag].label} />
+        )}
         {task.is_priority && !task.done && <span className="text-amber-500">★ </span>}
         {task.start_at && <span className="font-mono text-xs text-emerald-700">{hhmm(task.start_at)} </span>}
         {task.title}
+        {task.recur_id && <span className="ml-1 text-xs text-stone-400">🔁</span>}
       </span>
       {!task.done && (
         // a "⇄" icon with the native day picker laid invisibly on top (works with touch on iPad/phone)

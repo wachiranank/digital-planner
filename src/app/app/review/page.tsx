@@ -30,7 +30,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
   const sunday = addDays(monday, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 
-  const [{ data: taskData }, { data: review }, { data: prev }] = await Promise.all([
+  const [{ data: taskData }, { data: review }, { data: prev }, { data: habitRows }] = await Promise.all([
     supabase
       .from("planner_tasks")
       .select("id, title, day, is_priority, done, start_at, end_at")
@@ -39,7 +39,20 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
       .order("day"),
     supabase.from("planner_reviews").select("wins, improve, focus").eq("week_start", monday).maybeSingle(),
     supabase.from("planner_reviews").select("focus").eq("week_start", addDays(monday, -7)).maybeSingle(),
+    supabase
+      .from("planner_habits")
+      .select("id, name, emoji, planner_habit_logs(day)")
+      .eq("active", true)
+      .gte("planner_habit_logs.day", monday)
+      .lte("planner_habit_logs.day", sunday)
+      .order("created_at"),
   ]);
+  const elapsed = Math.max(1, Math.min(7, Math.round((Date.parse(`${today < sunday ? today : sunday}T12:00:00Z`) - Date.parse(`${monday}T12:00:00Z`)) / 864e5) + 1));
+  const habits = (habitRows ?? []).map((h) => ({
+    id: h.id as string,
+    label: `${h.emoji ? `${h.emoji} ` : ""}${h.name}`,
+    count: ((h.planner_habit_logs ?? []) as { day: string }[]).length,
+  }));
   const tasks = (taskData ?? []) as T[];
   const done = tasks.filter((t) => t.done);
   const open = tasks.filter((t) => !t.done);
@@ -107,6 +120,25 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
           ))}
         </div>
       </section>
+
+      {habits.length > 0 && (
+        <section className="mt-6 rounded-xl bg-white p-4 ring-1 ring-stone-200">
+          <h2 className="text-sm font-semibold text-stone-500">นิสัยประจำวัน</h2>
+          <ul className="mt-3 space-y-2">
+            {habits.map((h) => (
+              <li key={h.id} className="flex items-center gap-3 text-sm">
+                <span className="w-40 shrink-0 truncate">{h.label}</span>
+                <div className="h-2 flex-1 rounded-full bg-stone-100">
+                  <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.min(100, (h.count / elapsed) * 100)}%` }} />
+                </div>
+                <span className="w-12 shrink-0 text-right text-stone-500">
+                  {h.count}/{elapsed}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <section>
