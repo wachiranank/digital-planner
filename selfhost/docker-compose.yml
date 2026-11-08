@@ -167,8 +167,17 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sites:/etc/caddy/sites:ro # extra sites for other apps on this VPS (see sites/README.md)
       - caddy-data:/data
       - caddy-config:/config
+    networks: [default, edge]
+
+networks:
+  default:
+  # shared network so this Caddy can also front other apps on the same VPS
+  edge:
+    name: edge
+    external: true
 
 volumes:
   db-data:

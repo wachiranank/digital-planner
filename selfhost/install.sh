@@ -15,6 +15,8 @@ jwt() { # jwt <role> — HS256 key signed with JWT_SECRET, valid 10 years
   printf '%s.%s.%s' "$h" "$p" "$s"
 }
 
+docker network create edge >/dev/null 2>&1 || true # shared network (see sites/README.md)
+
 # 1) Docker
 if ! command -v docker >/dev/null 2>&1; then
   say "Installing Docker"
@@ -86,6 +88,7 @@ ENV
   say ".env created"
 fi
 set -a; . ./.env; set +a
+if [ "${NO_START:-}" = "1" ]; then say "NO_START=1 — .env ready, not starting"; exit 0; fi
 
 # 3) Private images on GitHub Container Registry
 if ! docker pull -q "$PLANNER_IMAGE" >/dev/null 2>&1; then

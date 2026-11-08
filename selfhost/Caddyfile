@@ -23,3 +23,6 @@
 	}
 	respond "not found" 404
 }
+
+# other apps on this VPS (files in ./sites/*.caddy)
+import /etc/caddy/sites/*.caddy
