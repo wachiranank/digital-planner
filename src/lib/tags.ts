@@ -1,12 +1,33 @@
-export const TAGS = {
-  work: { label: "งาน", chip: "bg-sky-100 text-sky-800", dot: "bg-sky-500" },
-  personal: { label: "ส่วนตัว", chip: "bg-rose-100 text-rose-800", dot: "bg-rose-500" },
-  side: { label: "งานเสริม", chip: "bg-violet-100 text-violet-800", dot: "bg-violet-500" },
-  health: { label: "สุขภาพ", chip: "bg-emerald-100 text-emerald-800", dot: "bg-emerald-500" },
-  learn: { label: "เรียนรู้", chip: "bg-amber-100 text-amber-800", dot: "bg-amber-500" },
+// Category colours (literal class names so Tailwind keeps them)
+export const COLORS = {
+  sky: { chip: "bg-sky-100 text-sky-800", dot: "bg-sky-500", name: "ฟ้า" },
+  rose: { chip: "bg-rose-100 text-rose-800", dot: "bg-rose-500", name: "ชมพู" },
+  violet: { chip: "bg-violet-100 text-violet-800", dot: "bg-violet-500", name: "ม่วง" },
+  emerald: { chip: "bg-emerald-100 text-emerald-800", dot: "bg-emerald-500", name: "เขียว" },
+  amber: { chip: "bg-amber-100 text-amber-800", dot: "bg-amber-500", name: "เหลือง" },
+  orange: { chip: "bg-orange-100 text-orange-800", dot: "bg-orange-500", name: "ส้ม" },
+  teal: { chip: "bg-teal-100 text-teal-800", dot: "bg-teal-500", name: "เขียวอมฟ้า" },
+  indigo: { chip: "bg-indigo-100 text-indigo-800", dot: "bg-indigo-500", name: "น้ำเงิน" },
+  red: { chip: "bg-red-100 text-red-800", dot: "bg-red-500", name: "แดง" },
+  slate: { chip: "bg-slate-200 text-slate-800", dot: "bg-slate-500", name: "เทา" },
 } as const;
-export type Tag = keyof typeof TAGS;
-export const isTag = (t: unknown): t is Tag => typeof t === "string" && t in TAGS;
+export type ColorKey = keyof typeof COLORS;
+export const isColor = (c: unknown): c is ColorKey => typeof c === "string" && c in COLORS;
+
+/** A category: built-in (key = "work", …) or the user's own (key = uuid). */
+export type TagDef = { key: string; label: string; color: ColorKey; custom: boolean };
+
+export const BUILTIN: TagDef[] = [
+  { key: "work", label: "งาน", color: "sky", custom: false },
+  { key: "personal", label: "ส่วนตัว", color: "rose", custom: false },
+  { key: "side", label: "งานเสริม", color: "violet", custom: false },
+  { key: "health", label: "สุขภาพ", color: "emerald", custom: false },
+  { key: "learn", label: "เรียนรู้", color: "amber", custom: false },
+];
+export const isBuiltinTag = (t: unknown) => typeof t === "string" && BUILTIN.some((b) => b.key === t);
+
+export const findTag = (tags: TagDef[], key?: string | null) => (key ? (tags.find((t) => t.key === key) ?? null) : null);
+export const tagStyle = (t: TagDef | null) => (t ? COLORS[t.color] : null);
 
 export const RULES = {
   daily: "ทุกวัน",

@@ -7,7 +7,8 @@ import { todayBangkok } from "@/lib/access";
 import { createEvent, deleteEvent, getAccessToken, patchEvent } from "@/lib/google";
 import { parseQuick } from "@/lib/thai-parse";
 import { createTaskFor, ensureRecurring, addDays, weekdayIdx } from "@/lib/tasks";
-import { isRule, isTag, type CheckItem } from "@/lib/tags";
+import { isColor, isRule, type CheckItem } from "@/lib/tags";
+import { validTag } from "@/lib/tags-server";
 
 async function db() {
   const supabase = await supabaseServer();
@@ -197,10 +198,9 @@ export async function updateTaskDetails(form: FormData) {
   const id = String(form.get("id"));
   const title = String(form.get("title") ?? "").trim().slice(0, 500);
   const notes = String(form.get("notes") ?? "").slice(0, 5000).trim() || null;
-  const tagIn = form.get("tag");
-  const tag = isTag(tagIn) ? tagIn : null;
   const { supabase, user, task } = await getTask(id);
   if (!task) return;
+  const tag = await validTag(supabase, form.get("tag"));
   const update: Record<string, unknown> = { notes, tag };
   if (title && title !== task.title) {
     update.title = title;
@@ -265,6 +265,42 @@ export async function setRepeat(id: string, rule: string) {
       await ensureRecurring(user.id, addDays(today, 6));
     }
   }
+  revalidatePath("/app", "layout");
+}
+
+// ---------- custom categories ----------
+export async function createTag(form: FormData): Promise<{ id: string | null }> {
+  const name = String(form.get("name") ?? "").trim().slice(0, 30);
+  const colorIn = form.get("color");
+  if (!name) return { id: null };
+  const { supabase, user } = await db();
+  const { data } = await supabase
+    .from("planner_tags")
+    .insert({ user_id: user.id, name, color: isColor(colorIn) ? colorIn : "slate" })
+    .select("id")
+    .single();
+  revalidatePath("/app", "layout");
+  return { id: data?.id ?? null };
+}
+
+export async function updateTag(form: FormData) {
+  const id = String(form.get("id"));
+  const name = String(form.get("name") ?? "").trim().slice(0, 30);
+  const colorIn = form.get("color");
+  if (!name) return;
+  const { supabase } = await db();
+  await supabase.from("planner_tags").update({ name, ...(isColor(colorIn) ? { color: colorIn } : {}) }).eq("id", id);
+  revalidatePath("/app", "layout");
+}
+
+/** Deletes a category; its tasks simply become uncategorised. */
+export async function deleteTag(id: string) {
+  const { supabase } = await db();
+  const { data: own } = await supabase.from("planner_tags").select("id").eq("id", id).maybeSingle();
+  if (!own) return;
+  await supabase.from("planner_tasks").update({ tag: null }).eq("tag", id);
+  await supabase.from("planner_recurring").update({ tag: null }).eq("tag", id);
+  await supabase.from("planner_tags").delete().eq("id", id);
   revalidatePath("/app", "layout");
 }
 

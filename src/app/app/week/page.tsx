@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess, todayBangkok } from "@/lib/access";
 import { eventDay, getAccessToken, hhmm, listRangeEvents, type GEvent } from "@/lib/google";
 import { addTask } from "../actions";
+import { getTags } from "@/lib/tags-server";
 import { AppNav } from "../nav";
 import { WeekTask, type WeekTaskData } from "./week-task";
 import { ensureRecurring } from "@/lib/tasks";
@@ -45,6 +46,7 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
     .order("start_at", { ascending: true, nullsFirst: false })
     .order("created_at");
   const tasks = (data ?? []) as WeekTaskData[];
+  const tags = await getTags(supabase);
 
   const token = await getAccessToken(user.id);
   let events: GEvent[] = [];
@@ -116,7 +118,7 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
 
               <ul className="mt-2 flex-1 space-y-1">
                 {dayTasks.map((t) => (
-                  <WeekTask key={t.id} task={t} days={days} />
+                  <WeekTask key={t.id} task={t} days={days} tags={tags} />
                 ))}
               </ul>
 

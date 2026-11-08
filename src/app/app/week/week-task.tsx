@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { moveTask, toggleDone } from "../actions";
-import { TAGS, isTag } from "@/lib/tags";
+import { findTag, tagStyle, type TagDef } from "@/lib/tags";
 
 export type WeekTaskData = {
   id: string;
@@ -24,8 +24,9 @@ const hhmm = (iso: string) =>
 const short = (day: string) =>
   new Intl.DateTimeFormat("th-TH", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
 
-export function WeekTask({ task, days }: { task: WeekTaskData; days: string[] }) {
+export function WeekTask({ task, days, tags }: { task: WeekTaskData; days: string[]; tags: TagDef[] }) {
   const [pending, start] = useTransition();
+  const tag = findTag(tags, task.tag);
   return (
     <li className={`group flex items-start gap-2 rounded-md px-1 py-1 text-sm hover:bg-stone-50 ${pending ? "opacity-50" : ""}`}>
       <input
@@ -36,9 +37,7 @@ export function WeekTask({ task, days }: { task: WeekTaskData; days: string[] })
         aria-label="ทำเสร็จแล้ว"
       />
       <span className={`flex-1 ${task.done ? "text-stone-400 line-through" : ""}`}>
-        {isTag(task.tag) && (
-          <span className={`mr-1 inline-block h-2 w-2 rounded-full align-middle ${TAGS[task.tag].dot}`} title={TAGS[task.tag].label} />
-        )}
+        {tag && <span className={`mr-1 inline-block h-2 w-2 rounded-full align-middle ${tagStyle(tag)!.dot}`} title={tag.label} />}
         {task.is_priority && !task.done && <span className="text-amber-500">★ </span>}
         {task.start_at && <span className="font-mono text-xs text-emerald-700">{hhmm(task.start_at)} </span>}
         {task.title}

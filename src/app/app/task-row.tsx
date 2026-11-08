@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { deleteTask, scheduleTask, setChecklist, setRepeat, toggleDone, togglePriority, unscheduleTask, updateTaskDetails } from "./actions";
-import { RULES, TAGS, isTag, type CheckItem } from "@/lib/tags";
+import { createTag, deleteTask, scheduleTask, setChecklist, setRepeat, toggleDone, togglePriority, unscheduleTask, updateTaskDetails } from "./actions";
+import { COLORS, RULES, findTag, tagStyle, type CheckItem, type ColorKey, type TagDef } from "@/lib/tags";
 
 export type Task = {
   id: string;
@@ -33,14 +33,15 @@ function nextSlot() {
   return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
 }
 
-export function TaskRow({ task, calendar }: { task: Task; calendar: boolean }) {
+export function TaskRow({ task, calendar, tags }: { task: Task; calendar: boolean; tags: TagDef[] }) {
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState(false);
   const scheduled = task.start_at && task.end_at;
   const items = task.checklist ?? [];
   const doneItems = items.filter((i) => i.d).length;
-  const tag = isTag(task.tag) ? TAGS[task.tag] : null;
+  const tag = findTag(tags, task.tag);
+  const style = tagStyle(tag);
 
   return (
     <li className={`px-4 py-3 ${pending ? "opacity-50" : ""}`}>
@@ -58,7 +59,7 @@ export function TaskRow({ task, calendar }: { task: Task; calendar: boolean }) {
           aria-expanded={details}
           title="ดูรายละเอียด"
         >
-          {tag && <span className={`mr-1.5 rounded px-1.5 py-0.5 text-xs ${tag.chip}`}>{tag.label}</span>}
+          {tag && style && <span className={`mr-1.5 rounded px-1.5 py-0.5 text-xs ${style.chip}`}>{tag.label}</span>}
           {task.title}
           {task.recur_id && <span className="ml-1.5 text-xs text-stone-400" title="งานทำซ้ำ">🔁</span>}
           {items.length > 0 && (
@@ -143,13 +144,17 @@ export function TaskRow({ task, calendar }: { task: Task; calendar: boolean }) {
         </form>
       )}
 
-      {details && <TaskDetails task={task} onSaved={() => setDetails(false)} />}
+      {details && <TaskDetails task={task} tags={tags} onSaved={() => setDetails(false)} />}
     </li>
   );
 }
 
-function TaskDetails({ task, onSaved }: { task: Task; onSaved: () => void }) {
+function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[]; onSaved: () => void }) {
   const [pending, start] = useTransition();
+  const [selTag, setSelTag] = useState<string>(task.tag ?? "");
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState<ColorKey>("teal");
   const [items, setItems] = useState<CheckItem[]>(task.checklist ?? []);
   const [newItem, setNewItem] = useState("");
   const saveItems = (next: CheckItem[]) => {
@@ -176,22 +181,78 @@ function TaskDetails({ task, onSaved }: { task: Task; onSaved: () => void }) {
           className="w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 font-medium"
           aria-label="ชื่องาน"
         />
+        <input type="hidden" name="tag" value={selTag} />
         <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="หมวด">
-          <label className="cursor-pointer">
-            <input type="radio" name="tag" value="" defaultChecked={!task.tag} className="peer sr-only" />
-            <span className="rounded-full px-2.5 py-1 text-xs ring-1 ring-stone-300 peer-checked:bg-stone-800 peer-checked:text-white">
-              ไม่มีหมวด
-            </span>
-          </label>
-          {Object.entries(TAGS).map(([k, t]) => (
-            <label key={k} className="cursor-pointer">
-              <input type="radio" name="tag" value={k} defaultChecked={task.tag === k} className="peer sr-only" />
-              <span className={`rounded-full px-2.5 py-1 text-xs ${t.chip} opacity-60 peer-checked:opacity-100 peer-checked:ring-2 peer-checked:ring-stone-800`}>
-                {t.label}
-              </span>
-            </label>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!selTag}
+            onClick={() => setSelTag("")}
+            className={`rounded-full px-2.5 py-1 text-xs ring-1 ring-stone-300 ${!selTag ? "bg-stone-800 text-white" : "bg-white"}`}
+          >
+            ไม่มีหมวด
+          </button>
+          {tags.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="radio"
+              aria-checked={selTag === t.key}
+              onClick={() => setSelTag(t.key)}
+              className={`rounded-full px-2.5 py-1 text-xs ${COLORS[t.color].chip} ${selTag === t.key ? "ring-2 ring-stone-800" : "opacity-60"}`}
+            >
+              {t.label}
+            </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setAdding((a) => !a)}
+            className="rounded-full px-2.5 py-1 text-xs border border-dashed border-stone-400 text-stone-600"
+          >
+            + หมวดใหม่
+          </button>
         </div>
+        {adding && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md bg-white p-2 ring-1 ring-stone-200">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              maxLength={30}
+              placeholder="ชื่อหมวด เช่น ลูกค้า A"
+              className="min-w-0 flex-1 rounded-md border border-stone-300 px-2 py-1"
+            />
+            <div className="flex gap-1">
+              {(Object.keys(COLORS) as ColorKey[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setNewColor(c)}
+                  title={COLORS[c].name}
+                  aria-label={COLORS[c].name}
+                  className={`h-5 w-5 rounded-full ${COLORS[c].dot} ${newColor === c ? "ring-2 ring-stone-800 ring-offset-1" : ""}`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={!newName.trim() || pending}
+              onClick={() =>
+                start(async () => {
+                  const fd = new FormData();
+                  fd.set("name", newName);
+                  fd.set("color", newColor);
+                  const { id } = await createTag(fd);
+                  if (id) setSelTag(id);
+                  setNewName("");
+                  setAdding(false);
+                })
+              }
+              className="rounded-md bg-stone-800 px-3 py-1 text-white disabled:opacity-40"
+            >
+              สร้าง
+            </button>
+          </div>
+        )}
         <textarea
           name="notes"
           defaultValue={task.notes ?? ""}

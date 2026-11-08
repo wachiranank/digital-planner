@@ -5,6 +5,7 @@ import { getAccess, thaiLongDate, todayBangkok } from "@/lib/access";
 import { getAccessToken, hhmm, listDayEvents, type GEvent } from "@/lib/google";
 import { GoogleButton } from "../google-button";
 import { addTask } from "./actions";
+import { getTags } from "@/lib/tags-server";
 import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
 import { NotifyCard } from "./notify-card";
@@ -48,6 +49,7 @@ export default async function PlannerToday() {
       .gte("planner_habit_logs.day", addDays(today, -90))
       .order("created_at"),
   ]);
+  const tags = await getTags(supabase);
   const tasks = (data ?? []).map((t) => ({
     ...t,
     rule: (t.recur as unknown as { rule?: string } | null)?.rule ?? null,
@@ -194,28 +196,28 @@ export default async function PlannerToday() {
 
           <Section title={`งานสำคัญ (${priorities.length}/3)`} hint="กด ☆ ที่งานเพื่อเลือกเป็นงานสำคัญของวัน">
             {priorities.map((t) => (
-              <TaskRow key={t.id} task={t} calendar={!!token} />
+              <TaskRow key={t.id} task={t} calendar={!!token} tags={tags} />
             ))}
           </Section>
 
           {carried.length > 0 && (
             <Section title={`ยกมาจากวันก่อน (${carried.length})`}>
               {carried.map((t) => (
-                <TaskRow key={t.id} task={t} calendar={!!token} />
+                <TaskRow key={t.id} task={t} calendar={!!token} tags={tags} />
               ))}
             </Section>
           )}
 
           <Section title="งานอื่นวันนี้">
             {others.map((t) => (
-              <TaskRow key={t.id} task={t} calendar={!!token} />
+              <TaskRow key={t.id} task={t} calendar={!!token} tags={tags} />
             ))}
           </Section>
 
           {done.length > 0 && (
             <Section title={`เสร็จแล้ว (${done.length})`}>
               {done.map((t) => (
-                <TaskRow key={t.id} task={t} calendar={!!token} />
+                <TaskRow key={t.id} task={t} calendar={!!token} tags={tags} />
               ))}
             </Section>
           )}
