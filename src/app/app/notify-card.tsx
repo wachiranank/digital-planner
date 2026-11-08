@@ -79,7 +79,7 @@ export function NotifyCard({
   if (state === "loading") return null;
 
   return (
-    <section className="mt-6 rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
+    <section className="rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
       <h2 className="font-semibold">🔔 การแจ้งเตือน</h2>
 
       {state === "ios-install" && (

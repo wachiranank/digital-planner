@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { deleteTask, moveTask, scheduleTask, toggleDone, togglePriority, unscheduleTask } from "./actions";
-import { TaskDetails, type Task } from "./task-row";
+import { TaskDetails, type Task } from "./task-details";
 import { findTag, tagStyle, type TagDef } from "@/lib/tags";
 
 const hhmm = (iso: string) =>
@@ -29,6 +29,8 @@ export function TaskModal({
   const [mounted, setMounted] = useState(false);
   const tag = findTag(tags, task.tag);
   const scheduled = !!(task.start_at && task.end_at);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
+  const scheduleDay = task.day < today ? today : task.day; // carried-over tasks are scheduled for today
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +101,7 @@ export function TaskModal({
             >
               <span className="w-14 shrink-0 text-xs font-semibold text-stone-500">เวลา</span>
               <input type="hidden" name="id" value={task.id} />
-              <input type="hidden" name="day" value={task.day} />
+              <input type="hidden" name="day" value={scheduleDay} />
               <input
                 type="time"
                 name="time"

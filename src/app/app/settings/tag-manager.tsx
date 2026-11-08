@@ -80,7 +80,7 @@ export function TagManager({ tags }: { tags: TagDef[] }) {
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">หมวดของฉัน</h2>
+        <h3 className="text-sm font-semibold text-stone-500">หมวดของฉัน</h3>
         <ul className="mt-2 divide-y divide-stone-100 rounded-xl bg-white ring-1 ring-stone-200">
           {custom.length === 0 && <li className="px-4 py-3 text-sm text-stone-400">ยังไม่มี — สร้างหมวดแรกด้านล่าง</li>}
           {custom.map((t) => (
@@ -118,7 +118,7 @@ export function TagManager({ tags }: { tags: TagDef[] }) {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">หมวดพื้นฐาน</h2>
+        <h3 className="text-sm font-semibold text-stone-500">หมวดพื้นฐาน</h3>
         <div className="mt-2 flex flex-wrap gap-2">
           {builtin.map((t) => (
             <span key={t.key} className={`rounded px-2 py-1 text-xs ${COLORS[t.color].chip}`}>

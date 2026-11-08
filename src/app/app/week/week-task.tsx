@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { moveTask, toggleDone } from "../actions";
 import { findTag, tagStyle, type TagDef } from "@/lib/tags";
-import type { Task } from "../task-row";
+import type { Task } from "../task-details";
 import { TaskModal } from "../task-modal";
 
 export type WeekTaskData = Task;

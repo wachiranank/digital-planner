@@ -27,7 +27,7 @@ export function HabitsCard({ habits, today }: { habits: HabitData[]; today: stri
   const last7 = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6));
 
   return (
-    <section className={`mt-6 rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200 ${pending ? "opacity-60" : ""}`}>
+    <section className={`rounded-2xl bg-white p-4 text-sm shadow-sm ring-1 ring-stone-200 ${pending ? "opacity-60" : ""}`}>
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">✅ นิสัยประจำวัน</h2>
         {habits.length > 0 && (

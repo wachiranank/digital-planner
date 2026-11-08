@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { TagDef } from "@/lib/tags";
-import type { Task } from "../task-row";
+import type { Task } from "../task-details";
 import { TaskModal } from "../task-modal";
 
 /** A task line inside a month cell: opens the edit popup instead of selecting the day. */

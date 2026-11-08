@@ -10,7 +10,7 @@ export function LineCard({ linked, notify, botId }: { linked: boolean; notify: b
   const id = encodeURIComponent(botId);
 
   return (
-    <section className="mt-6 rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
+    <section className="rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
       <h2 className="flex items-center gap-2 font-semibold">
         <span className="rounded bg-[#06C755] px-1.5 py-0.5 text-xs font-bold text-white">LINE</span> แจ้งเตือนทาง LINE
       </h2>
