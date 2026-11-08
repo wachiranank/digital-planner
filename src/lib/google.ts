@@ -61,18 +61,25 @@ async function gcal<T>(token: string, path: string, init: RequestInit = {}): Pro
   return (await res.json()) as T;
 }
 
-/** Events on one Bangkok day (YYYY-MM-DD). */
-export async function listDayEvents(token: string, day: string): Promise<GEvent[]> {
+/** Events from the start of `fromDay` to the end of `toDay` (Bangkok, YYYY-MM-DD). */
+export async function listRangeEvents(token: string, fromDay: string, toDay: string): Promise<GEvent[]> {
   const q = new URLSearchParams({
-    timeMin: `${day}T00:00:00+07:00`,
-    timeMax: `${day}T23:59:59+07:00`,
+    timeMin: `${fromDay}T00:00:00+07:00`,
+    timeMax: `${toDay}T23:59:59+07:00`,
     singleEvents: "true",
     orderBy: "startTime",
-    maxResults: "100",
+    maxResults: "250",
   });
   const data = await gcal<{ items: GEvent[] }>(token, `?${q}`);
   return (data?.items ?? []).filter((e) => e.status !== "cancelled");
 }
+
+/** Events on one Bangkok day (YYYY-MM-DD). */
+export const listDayEvents = (token: string, day: string) => listRangeEvents(token, day, day);
+
+/** Bangkok calendar day (YYYY-MM-DD) an event starts on */
+export const eventDay = (e: GEvent) =>
+  e.start.date ?? new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(e.start.dateTime!));
 
 export async function createEvent(token: string, summary: string, startISO: string, endISO: string) {
   return gcal<GEvent>(token, "", {

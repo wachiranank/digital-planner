@@ -7,7 +7,7 @@ Next.js (Vercel) + Supabase (โปรเจกต์เดียวกับร
 - [x] Phase 1 — Google sign-in, trial 14 วัน, ใส่ license key (เรียก License API ของร้าน)
 - [x] Phase 2 (เริ่มต้น) — หน้า "วันนี้": งานสำคัญ 3 อย่าง, ยกงานค้าง, เสร็จ/ลบ, วันที่แบบ พ.ศ.
 - [x] Phase 3 — ซิงก์ Google Calendar: ดูนัดวันนี้, กด ⏰ ลงเวลางาน → สร้าง event, เสร็จ/ลบ/ย้ายเวลา สะท้อนทั้ง 2 ฝั่ง (ต้องมี `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, เปิด Calendar API, รัน `0002_google_tokens.sql`)
-- [ ] Phase 4 — มุมมองสัปดาห์ / layout iPad + PWA
+- [x] Phase 4 — มุมมองสัปดาห์ (ย้ายงานข้ามวัน, ดูนัดทั้งสัปดาห์), layout 2 คอลัมน์บน iPad/คอม, PWA ติดตั้งลงหน้าจอได้ + หน้าออฟไลน์
 - [ ] Phase 5 — แจ้งเตือน LINE + weekly review
 
 ## ติดตั้ง

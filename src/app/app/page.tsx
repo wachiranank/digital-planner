@@ -4,7 +4,8 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess, thaiLongDate, todayBangkok } from "@/lib/access";
 import { getAccessToken, hhmm, listDayEvents, type GEvent } from "@/lib/google";
 import { GoogleButton } from "../google-button";
-import { addTask, signOut } from "./actions";
+import { addTask } from "./actions";
+import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
 
 export const dynamic = "force-dynamic";
@@ -85,94 +86,100 @@ export default async function PlannerToday() {
   const done = tasks.filter((t) => t.done);
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8 md:py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-stone-500">วันนี้</p>
-          <h1 className="text-2xl font-bold">{thaiLongDate(today)}</h1>
-        </div>
-        <form action={signOut}>
-          <button className="text-sm text-stone-500 underline">ออกจากระบบ</button>
-        </form>
-      </header>
+    <main className="mx-auto max-w-5xl px-5 py-6 md:py-10">
+      <AppNav active="today" />
+      <div className="mt-4">
+        <p className="text-sm text-stone-500">วันนี้</p>
+        <h1 className="text-2xl font-bold">{thaiLongDate(today)}</h1>
+      </div>
 
       {access.status === "trial" && (
         <Link href="/activate" className="mt-4 block rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
           ทดลองใช้เหลือ {access.daysLeft} วัน — กดเพื่อใส่ license key
         </Link>
       )}
-
-      {!token ? (
+      {!token && (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
           <span>เชื่อม Google Calendar เพื่อดูนัดวันนี้และลงเวลางานลงปฏิทินอัตโนมัติ</span>
           <GoogleButton label="เชื่อม Calendar" variant="subtle" />
         </div>
-      ) : (
-        <section className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-            ตารางวันนี้ <span className="font-normal normal-case">· Google Calendar</span>
-          </h2>
-          {calendarError && <p className="mt-2 text-sm text-red-600">ดึงข้อมูลปฏิทินไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>}
-          <ol className="mt-2 rounded-xl bg-white ring-1 ring-stone-200">
-            {agenda.length === 0 && <li className="px-4 py-3 text-sm text-stone-400">ไม่มีนัดวันนี้ — กด ⏰ ที่งานเพื่อลงเวลา</li>}
-            {agenda.map((a) => (
-              <li key={a.key} className="flex gap-3 border-b border-stone-100 px-4 py-2.5 last:border-0">
-                <span className="w-24 shrink-0 font-mono text-sm text-stone-500">{a.time}</span>
-                <span
-                  className={
-                    a.kind === "event"
-                      ? "text-stone-700"
-                      : a.kind === "done"
-                        ? "text-stone-400 line-through"
-                        : "font-medium text-emerald-700"
-                  }
-                >
-                  {a.label}
-                </span>
-              </li>
+      )}
+
+      {/* iPad / desktop: tasks left, today's schedule right. Phone: stacked, schedule first */}
+      <div className="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="md:order-2">
+          {token && (
+            <section className="mt-6 md:sticky md:top-6">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+                ตารางวันนี้ <span className="font-normal normal-case">· Google Calendar</span>
+              </h2>
+              {calendarError && <p className="mt-2 text-sm text-red-600">ดึงข้อมูลปฏิทินไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>}
+              <ol className="mt-2 rounded-xl bg-white ring-1 ring-stone-200">
+                {agenda.length === 0 && (
+                  <li className="px-4 py-3 text-sm text-stone-400">ไม่มีนัดวันนี้ — กด ⏰ ที่งานเพื่อลงเวลา</li>
+                )}
+                {agenda.map((a) => (
+                  <li key={a.key} className="flex gap-3 border-b border-stone-100 px-4 py-2.5 last:border-0">
+                    <span className="w-24 shrink-0 font-mono text-sm text-stone-500">{a.time}</span>
+                    <span
+                      className={
+                        a.kind === "event"
+                          ? "text-stone-700"
+                          : a.kind === "done"
+                            ? "text-stone-400 line-through"
+                            : "font-medium text-emerald-700"
+                      }
+                    >
+                      {a.label}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </div>
+
+        <div className="md:order-1">
+          <form action={addTask} className="mt-6 flex gap-2">
+            <input
+              name="title"
+              required
+              maxLength={500}
+              placeholder="เพิ่มงานวันนี้..."
+              className="flex-1 rounded-xl border border-stone-300 bg-white px-4 py-3"
+            />
+            <button className="rounded-xl bg-emerald-600 px-5 font-semibold text-white hover:bg-emerald-700">เพิ่ม</button>
+          </form>
+
+          <Section title={`งานสำคัญ (${priorities.length}/3)`} hint="กด ☆ ที่งานเพื่อเลือกเป็นงานสำคัญของวัน">
+            {priorities.map((t) => (
+              <TaskRow key={t.id} task={t} calendar={!!token} />
             ))}
-          </ol>
-        </section>
-      )}
+          </Section>
 
-      <form action={addTask} className="mt-6 flex gap-2">
-        <input
-          name="title"
-          required
-          maxLength={500}
-          placeholder="เพิ่มงานวันนี้..."
-          className="flex-1 rounded-xl border border-stone-300 bg-white px-4 py-3"
-        />
-        <button className="rounded-xl bg-emerald-600 px-5 font-semibold text-white hover:bg-emerald-700">เพิ่ม</button>
-      </form>
+          {carried.length > 0 && (
+            <Section title={`ยกมาจากวันก่อน (${carried.length})`}>
+              {carried.map((t) => (
+                <TaskRow key={t.id} task={t} calendar={!!token} />
+              ))}
+            </Section>
+          )}
 
-      <Section title={`งานสำคัญ (${priorities.length}/3)`} hint="กด ☆ ที่งานเพื่อเลือกเป็นงานสำคัญของวัน">
-        {priorities.map((t) => (
-          <TaskRow key={t.id} task={t} calendar={!!token} />
-        ))}
-      </Section>
+          <Section title="งานอื่นวันนี้">
+            {others.map((t) => (
+              <TaskRow key={t.id} task={t} calendar={!!token} />
+            ))}
+          </Section>
 
-      {carried.length > 0 && (
-        <Section title={`ยกมาจากวันก่อน (${carried.length})`}>
-          {carried.map((t) => (
-            <TaskRow key={t.id} task={t} calendar={!!token} />
-          ))}
-        </Section>
-      )}
-
-      <Section title="งานอื่นวันนี้">
-        {others.map((t) => (
-          <TaskRow key={t.id} task={t} calendar={!!token} />
-        ))}
-      </Section>
-
-      {done.length > 0 && (
-        <Section title={`เสร็จแล้ว (${done.length})`}>
-          {done.map((t) => (
-            <TaskRow key={t.id} task={t} calendar={!!token} />
-          ))}
-        </Section>
-      )}
+          {done.length > 0 && (
+            <Section title={`เสร็จแล้ว (${done.length})`}>
+              {done.map((t) => (
+                <TaskRow key={t.id} task={t} calendar={!!token} />
+              ))}
+            </Section>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

@@ -25,12 +25,47 @@ async function getTask(id: string) {
   return { supabase, user, task };
 }
 
+const isDay = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
 export async function addTask(form: FormData) {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return;
+  const dayInput = form.get("day");
+  const day = isDay(dayInput) ? dayInput : todayBangkok();
   const { supabase } = await db();
-  await supabase.from("planner_tasks").insert({ title, day: todayBangkok() });
-  revalidatePath("/app");
+  await supabase.from("planner_tasks").insert({ title, day });
+  revalidatePath("/app", "layout");
+}
+
+/** Move a task to another day; a time-blocked task keeps its clock time and its Google event moves too. */
+export async function moveTask(id: string, newDay: string) {
+  if (!isDay(newDay)) return;
+  const { supabase, user } = await db();
+  const { data: task } = await supabase
+    .from("planner_tasks")
+    .select("id, day, start_at, end_at, gcal_event_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!task || task.day === newDay) return;
+
+  const update: Record<string, unknown> = { day: newDay };
+  if (task.start_at && task.end_at) {
+    const shift = Date.parse(`${newDay}T00:00:00+07:00`) - Date.parse(`${task.day}T00:00:00+07:00`);
+    const start = new Date(Date.parse(task.start_at) + shift).toISOString();
+    const end = new Date(Date.parse(task.end_at) + shift).toISOString();
+    Object.assign(update, { start_at: start, end_at: end });
+    if (task.gcal_event_id) {
+      const token = await getAccessToken(user.id);
+      if (token) {
+        await patchEvent(token, task.gcal_event_id, {
+          start: { dateTime: start, timeZone: "Asia/Bangkok" },
+          end: { dateTime: end, timeZone: "Asia/Bangkok" },
+        }).catch(() => {});
+      }
+    }
+  }
+  await supabase.from("planner_tasks").update(update).eq("id", id);
+  revalidatePath("/app", "layout");
 }
 
 export async function toggleDone(id: string, done: boolean) {
@@ -45,7 +80,7 @@ export async function toggleDone(id: string, done: boolean) {
     const token = await getAccessToken(user.id);
     if (token) await patchEvent(token, task.gcal_event_id, { summary: done ? `✓ ${task.title}` : task.title }).catch(() => {});
   }
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
 }
 
 export async function togglePriority(id: string, isPriority: boolean) {
@@ -61,7 +96,7 @@ export async function togglePriority(id: string, isPriority: boolean) {
     if ((count ?? 0) >= 3) return;
   }
   await supabase.from("planner_tasks").update({ is_priority: isPriority }).eq("id", id);
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
 }
 
 export async function deleteTask(id: string) {
@@ -71,7 +106,7 @@ export async function deleteTask(id: string) {
     if (token) await deleteEvent(token, task.gcal_event_id).catch(() => {});
   }
   await supabase.from("planner_tasks").delete().eq("id", id);
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
 }
 
 /** Time-block a task: creates (or moves) its Google Calendar event. form: id, time "HH:mm", minutes */
@@ -108,7 +143,7 @@ export async function scheduleTask(form: FormData) {
     .from("planner_tasks")
     .update({ day, start_at: start.toISOString(), end_at: end.toISOString(), gcal_event_id: eventId })
     .eq("id", id);
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
 }
 
 export async function unscheduleTask(id: string) {
@@ -119,7 +154,7 @@ export async function unscheduleTask(id: string) {
     if (token) await deleteEvent(token, task.gcal_event_id).catch(() => {});
   }
   await supabase.from("planner_tasks").update({ start_at: null, end_at: null, gcal_event_id: null }).eq("id", id);
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
 }
 
 export async function signOut() {
