@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess, thaiLongDate, todayBangkok } from "@/lib/access";
+import { getAccessToken, hhmm, listDayEvents, type GEvent } from "@/lib/google";
+import { GoogleButton } from "../google-button";
 import { addTask, signOut } from "./actions";
 import { TaskRow, type Task } from "./task-row";
 
@@ -21,10 +23,61 @@ export default async function PlannerToday() {
   // Today's tasks + every unfinished task from earlier days (auto carry-over)
   const { data } = await supabase
     .from("planner_tasks")
-    .select("id, title, day, is_priority, done")
+    .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id")
     .or(`day.eq.${today},and(day.lt.${today},done.eq.false)`)
     .order("created_at");
   const tasks = (data ?? []) as Task[];
+
+  // ---- Google Calendar: read today's events and pull changes made in Google ----
+  const token = await getAccessToken(user.id);
+  let events: GEvent[] = [];
+  let calendarError = false;
+  if (token) {
+    try {
+      events = await listDayEvents(token, today);
+      const byId = new Map(events.map((e) => [e.id, e]));
+      for (const t of tasks) {
+        if (!t.gcal_event_id || t.day !== today) continue;
+        const ev = byId.get(t.gcal_event_id);
+        if (!ev) {
+          // deleted (or moved to another day) in Google → drop the time block here
+          await supabase.from("planner_tasks").update({ start_at: null, end_at: null, gcal_event_id: null }).eq("id", t.id);
+          Object.assign(t, { start_at: null, end_at: null, gcal_event_id: null });
+        } else if (ev.start.dateTime && ev.end.dateTime) {
+          // moved/resized in Google → follow it (compare instants, not string formats)
+          const ms = (s: string | null) => (s ? new Date(s).getTime() : NaN);
+          if (ms(ev.start.dateTime) !== ms(t.start_at) || ms(ev.end.dateTime) !== ms(t.end_at)) {
+            const start_at = new Date(ev.start.dateTime).toISOString();
+            const end_at = new Date(ev.end.dateTime).toISOString();
+            await supabase.from("planner_tasks").update({ start_at, end_at }).eq("id", t.id);
+            Object.assign(t, { start_at, end_at });
+          }
+        }
+      }
+    } catch {
+      calendarError = true;
+    }
+  }
+  const taskEventIds = new Set(tasks.map((t) => t.gcal_event_id).filter(Boolean));
+  const otherEvents = events.filter((e) => !taskEventIds.has(e.id));
+  const agenda = [
+    ...otherEvents.map((e) => ({
+      key: e.id,
+      start: e.start.dateTime ?? `${today}T00:00:00+07:00`,
+      label: e.summary ?? "(ไม่มีชื่อ)",
+      time: e.start.dateTime ? `${hhmm(e.start.dateTime)}–${hhmm(e.end.dateTime!)}` : "ทั้งวัน",
+      kind: "event" as const,
+    })),
+    ...tasks
+      .filter((t) => t.start_at && t.end_at && t.day === today)
+      .map((t) => ({
+        key: t.id,
+        start: t.start_at!,
+        label: t.title,
+        time: `${hhmm(t.start_at!)}–${hhmm(t.end_at!)}`,
+        kind: t.done ? ("done" as const) : ("task" as const),
+      })),
+  ].sort((a, b) => a.start.localeCompare(b.start));
 
   const priorities = tasks.filter((t) => t.is_priority && !t.done);
   const carried = tasks.filter((t) => t.day < today && !t.is_priority);
@@ -49,6 +102,39 @@ export default async function PlannerToday() {
         </Link>
       )}
 
+      {!token ? (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
+          <span>เชื่อม Google Calendar เพื่อดูนัดวันนี้และลงเวลางานลงปฏิทินอัตโนมัติ</span>
+          <GoogleButton label="เชื่อม Calendar" variant="subtle" />
+        </div>
+      ) : (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+            ตารางวันนี้ <span className="font-normal normal-case">· Google Calendar</span>
+          </h2>
+          {calendarError && <p className="mt-2 text-sm text-red-600">ดึงข้อมูลปฏิทินไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>}
+          <ol className="mt-2 rounded-xl bg-white ring-1 ring-stone-200">
+            {agenda.length === 0 && <li className="px-4 py-3 text-sm text-stone-400">ไม่มีนัดวันนี้ — กด ⏰ ที่งานเพื่อลงเวลา</li>}
+            {agenda.map((a) => (
+              <li key={a.key} className="flex gap-3 border-b border-stone-100 px-4 py-2.5 last:border-0">
+                <span className="w-24 shrink-0 font-mono text-sm text-stone-500">{a.time}</span>
+                <span
+                  className={
+                    a.kind === "event"
+                      ? "text-stone-700"
+                      : a.kind === "done"
+                        ? "text-stone-400 line-through"
+                        : "font-medium text-emerald-700"
+                  }
+                >
+                  {a.label}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       <form action={addTask} className="mt-6 flex gap-2">
         <input
           name="title"
@@ -62,28 +148,28 @@ export default async function PlannerToday() {
 
       <Section title={`งานสำคัญ (${priorities.length}/3)`} hint="กด ☆ ที่งานเพื่อเลือกเป็นงานสำคัญของวัน">
         {priorities.map((t) => (
-          <TaskRow key={t.id} task={t} />
+          <TaskRow key={t.id} task={t} calendar={!!token} />
         ))}
       </Section>
 
       {carried.length > 0 && (
         <Section title={`ยกมาจากวันก่อน (${carried.length})`}>
           {carried.map((t) => (
-            <TaskRow key={t.id} task={t} />
+            <TaskRow key={t.id} task={t} calendar={!!token} />
           ))}
         </Section>
       )}
 
       <Section title="งานอื่นวันนี้">
         {others.map((t) => (
-          <TaskRow key={t.id} task={t} />
+          <TaskRow key={t.id} task={t} calendar={!!token} />
         ))}
       </Section>
 
       {done.length > 0 && (
         <Section title={`เสร็จแล้ว (${done.length})`}>
           {done.map((t) => (
-            <TaskRow key={t.id} task={t} />
+            <TaskRow key={t.id} task={t} calendar={!!token} />
           ))}
         </Section>
       )}
