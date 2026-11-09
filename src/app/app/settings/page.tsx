@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess } from "@/lib/access";
+import { isAdmin } from "@/lib/admin";
 import { getAccessToken } from "@/lib/google";
 import { getTags } from "@/lib/tags-server";
 import { lineBotId, lineConfigured } from "@/lib/line";
@@ -120,6 +121,12 @@ export default async function Settings() {
                 <span className="text-stone-500">License key</span>
                 <span className="font-mono">{prefs.license_key}</span>
               </div>
+            )}
+            {isAdmin(user.email) && (
+              <Link href="/app/admin" className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50">
+                <span className="font-medium">🛠️ Admin · สร้าง key ฟรี</span>
+                <span className="text-stone-400">›</span>
+              </Link>
             )}
             <form action={signOut} className="px-4 py-3">
               <button className="text-red-600 hover:underline">ออกจากระบบ</button>

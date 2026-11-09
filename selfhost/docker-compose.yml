@@ -125,6 +125,7 @@ services:
       migrate: { condition: service_completed_successfully }
     environment:
       APP_URL: https://${PLANNER_DOMAIN}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-${ADMIN_EMAIL}} # who can open /app/admin (comma separated)
       SUPABASE_URL: https://${API_DOMAIN}
       SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
       SUPABASE_SECRET_KEY: ${SERVICE_ROLE_KEY}
