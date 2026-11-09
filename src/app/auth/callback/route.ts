@@ -17,7 +17,8 @@ export async function GET(request: Request) {
   const jar = await cookies();
   const next = decodeURIComponent(jar.get("after_login")?.value ?? "");
   const dest = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
-  const res = NextResponse.redirect(new URL(dest, url.origin));
+  // behind a reverse proxy (self-hosted) request.url is the internal address, so prefer APP_URL
+  const res = NextResponse.redirect(new URL(dest, process.env.APP_URL || url.origin));
   res.cookies.delete("after_login");
   return res;
 }
