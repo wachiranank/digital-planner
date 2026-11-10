@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { deleteTask, moveTask, scheduleTask, toggleDone, togglePriority, unscheduleTask } from "./actions";
+import { deleteTask, moveTask, moveToInbox, scheduleTask, toggleDone, togglePriority, unscheduleTask } from "./actions";
 import { TaskDetails, type Task } from "./task-details";
 import { findTag, tagStyle, type TagDef } from "@/lib/tags";
 
@@ -30,7 +30,9 @@ export function TaskModal({
   const tag = findTag(tags, task.tag);
   const scheduled = !!(task.start_at && task.end_at);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
-  const scheduleDay = task.day < today ? today : task.day; // carried-over tasks are scheduled for today
+  // carried-over (and Inbox) tasks are scheduled for today
+  const scheduleDay = !task.day || task.day < today ? today : task.day;
+  const inInbox = !task.day;
 
   useEffect(() => {
     setMounted(true);
@@ -71,6 +73,7 @@ export function TaskModal({
             {tag && <span className={`mr-1.5 rounded px-1.5 py-0.5 text-xs font-normal ${tagStyle(tag)!.chip}`}>{tag.label}</span>}
             {task.title}
           </p>
+          {!inInbox && (
           <button
             onClick={() => start(() => togglePriority(task.id, !task.is_priority))}
             className={`text-xl ${task.is_priority ? "text-amber-500" : "text-stone-300 hover:text-amber-400"}`}
@@ -78,6 +81,7 @@ export function TaskModal({
           >
             {task.is_priority ? "★" : "☆"}
           </button>
+          )}
           <button onClick={onClose} className="text-xl text-stone-400 hover:text-stone-700" aria-label="ปิด">
             ✕
           </button>
@@ -89,10 +93,29 @@ export function TaskModal({
             <span className="w-14 shrink-0 text-xs font-semibold text-stone-500">วันที่</span>
             <input
               type="date"
-              defaultValue={task.day}
+              defaultValue={task.day ?? ""}
               onChange={(e) => e.target.value && start(() => moveTask(task.id, e.target.value))}
               className="rounded-md border border-stone-300 px-2 py-1"
             />
+            {inInbox ? (
+              <span className="text-xs text-stone-400">📥 อยู่ใน Inbox — เลือกวันเพื่อวางแผน</span>
+            ) : (
+              !task.recur_id &&
+              !task.done && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    start(async () => {
+                      await moveToInbox(task.id);
+                      onClose();
+                    })
+                  }
+                  className="text-xs text-stone-500 underline hover:text-stone-800"
+                >
+                  📥 ยังไม่แน่ใจวัน → Inbox
+                </button>
+              )
+            )}
           </label>
           {calendar && (
             <form

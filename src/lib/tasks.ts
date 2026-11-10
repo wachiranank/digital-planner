@@ -8,15 +8,18 @@ export const addDays = (day: string, n: number) =>
   new Date(Date.parse(`${day}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 export const weekdayIdx = (day: string) => (new Date(`${day}T12:00:00Z`).getUTCDay() + 6) % 7; // Monday = 0
 
-/** Creates a task; with a time it is also put on Google Calendar (if connected). */
+/**
+ * Creates a task; with a time it is also put on Google Calendar (if connected).
+ * `day: null` puts it in the Inbox (no day, so any time is ignored).
+ */
 export async function createTaskFor(
   userId: string,
-  t: { title: string; day: string; time?: string | null; minutes?: number | null },
+  t: { title: string; day: string | null; time?: string | null; minutes?: number | null },
 ): Promise<{ id: string; start?: string; end?: string; calendar: boolean } | null> {
   const admin = supabaseAdmin();
   const row: Record<string, unknown> = { user_id: userId, title: t.title.slice(0, 500), day: t.day };
   let calendar = false;
-  if (t.time) {
+  if (t.time && t.day) {
     const start = new Date(`${t.day}T${t.time}:00+07:00`);
     const end = new Date(start.getTime() + Math.min(Math.max(t.minutes ?? 60, 5), 480) * 60e3);
     Object.assign(row, { start_at: start.toISOString(), end_at: end.toISOString() });
