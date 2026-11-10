@@ -9,6 +9,7 @@ import { getTags } from "@/lib/tags-server";
 import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
 import { HabitsCard, type HabitData } from "./habits-card";
+import { PlanRow, RolloverAllButtons } from "./plan-row";
 import { ensureRecurring, addDays } from "@/lib/tasks";
 
 export const dynamic = "force-dynamic";
@@ -115,7 +116,7 @@ export default async function PlannerToday() {
     agenda.find((a) => !a.allDay && Date.parse(a.start) > now)?.key;
 
   const priorityAll = tasks.filter((t) => t.is_priority && (t.day === today || !t.done));
-  const carried = tasks.filter((t) => t.day < today && !t.is_priority);
+  const carried = tasks.filter((t) => t.day! < today && !t.is_priority);
   const others = tasks.filter((t) => t.day === today && !t.is_priority && !t.done);
   const done = tasks.filter((t) => t.done && !t.is_priority);
   const doneCount = tasks.filter((t) => t.done).length;
@@ -186,7 +187,7 @@ export default async function PlannerToday() {
           </div>
           <ul className="divide-y divide-stone-100">
             {priorityAll.slice(0, 3).map((t, i) => (
-              <TaskRow key={t.id} task={t} calendar={cal} tags={tags} index={i + 1} showDay={t.day < today} />
+              <TaskRow key={t.id} task={t} calendar={cal} tags={tags} index={i + 1} showDay={t.day! < today} />
             ))}
             {Array.from({ length: Math.max(0, 3 - priorityAll.length) }, (_, i) => (
               <li key={`empty-${i}`} className="flex items-center gap-3 px-4 py-3 text-sm text-stone-400">
@@ -269,12 +270,15 @@ export default async function PlannerToday() {
           </div>
           {carried.length > 0 && (
             <>
-              <p className="border-t border-stone-100 bg-amber-50/60 px-4 py-1.5 text-xs font-medium text-amber-800">
-                ยกมาจากวันก่อน ({carried.length})
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 bg-amber-50/60 px-4 py-2">
+                <p className="text-xs text-amber-900">
+                  <span className="font-semibold">ค้างจากวันก่อน {carried.length} งาน</span> — ไม่เป็นไร เลือกได้ว่าจะทำต่อเมื่อไร
+                </p>
+                {carried.length > 1 && <RolloverAllButtons />}
+              </div>
               <ul className="divide-y divide-stone-100">
                 {carried.map((t) => (
-                  <TaskRow key={t.id} task={t} calendar={cal} tags={tags} showDay />
+                  <PlanRow key={t.id} task={t} calendar={cal} tags={tags} mode="carried" />
                 ))}
               </ul>
             </>

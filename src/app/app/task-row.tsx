@@ -62,7 +62,7 @@ export function TaskRow({
                 {fmt(task.start_at)}–{fmt(task.end_at)}
               </span>
             )}
-            {showDay && <span className="text-amber-700">จาก {shortDay(task.day)}</span>}
+            {showDay && task.day && <span className="text-amber-700">จาก {shortDay(task.day)}</span>}
             {task.recur_id && <span title="งานทำซ้ำ">🔁</span>}
             {items.length > 0 && (
               <span>

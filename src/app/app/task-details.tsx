@@ -7,7 +7,7 @@ import { COLORS, RULES, type CheckItem, type ColorKey, type TagDef } from "@/lib
 export type Task = {
   id: string;
   title: string;
-  day: string;
+  day: string | null; // null = in the Inbox
   is_priority: boolean;
   done: boolean;
   start_at: string | null;
@@ -172,6 +172,7 @@ export function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[
         </form>
       </div>
 
+      {task.day && (
       <label className="flex items-center gap-2">
         <span className="text-xs font-semibold text-stone-500">ทำซ้ำ</span>
         <select
@@ -187,6 +188,7 @@ export function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[
           ))}
         </select>
       </label>
+      )}
     </div>
   );
 }

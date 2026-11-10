@@ -15,7 +15,7 @@ type LineEvent = {
 };
 
 const HELP =
-  "• พิมพ์ \"วันนี้\" เพื่อดูงานวันนี้\n• พิมพ์ \"เพิ่ม ...\" เพื่อเพิ่มงาน เช่น\n  เพิ่ม ประชุมลูกค้า พรุ่งนี้ บ่าย 2 1 ชม.\n\nยังไม่ได้เชื่อมบัญชี? เปิดแอป → ตั้งค่า → \"เชื่อม LINE\" แล้วส่งรหัส 6 ตัวมาที่แชทนี้";
+  "• พิมพ์ \"วันนี้\" เพื่อดูงานวันนี้\n• พิมพ์ \"เพิ่ม ...\" เพื่อเพิ่มงาน เช่น\n  เพิ่ม ประชุมลูกค้า พรุ่งนี้ บ่าย 2 1 ชม.\n• พิมพ์ \"จด ...\" เพื่อจดไว้ใน Inbox ก่อน (ยังไม่ต้องเลือกวัน) เช่น\n  จด ต่อภาษีรถ\n\nยังไม่ได้เชื่อมบัญชี? เปิดแอป → ตั้งค่า → \"เชื่อม LINE\" แล้วส่งรหัส 6 ตัวมาที่แชทนี้";
 
 export async function POST(req: NextRequest) {
   const raw = await req.text();
@@ -85,7 +85,23 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // 3) quick add: "เพิ่ม ประชุม พรุ่งนี้ 10 โมง" / "+ ซื้อของ"
+    // 3) jot into the Inbox: "จด ต่อภาษีรถ" (a named day still wins: "จด ต่อภาษีรถ ศุกร์" → Friday)
+    const jot = text.match(/^(?:จด|inbox)\s*(.+)$/i);
+    if (me && jot) {
+      const p = parseQuick(jot[1], todayBangkok());
+      const created = await createTaskFor(me.user_id, { title: p.title, day: p.day, time: p.time, minutes: p.minutes });
+      await lineReply(
+        ev.replyToken,
+        !created
+          ? "จดไม่สำเร็จ ลองอีกครั้ง"
+          : p.day
+            ? `✅ เพิ่มแล้ว: ${p.title}\n📅 ${new Intl.DateTimeFormat("th-TH", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${p.day}T12:00:00Z`))}`
+            : `📥 จดไว้ใน Inbox แล้ว: ${p.title}\nเปิดแอป → Inbox เพื่อเลือกวันทีหลัง`,
+      );
+      continue;
+    }
+
+    // 4) quick add: "เพิ่ม ประชุม พรุ่งนี้ 10 โมง" / "+ ซื้อของ"
     const add = text.match(/^(?:เพิ่ม|\+|add)\s*(.+)$/i);
     if (me && add) {
       const today = todayBangkok();

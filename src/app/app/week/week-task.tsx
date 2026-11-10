@@ -57,7 +57,7 @@ export function WeekTask({
         )}
         {task.notes && <span className="ml-1 text-xs text-stone-400">📝</span>}
       </button>
-      {!task.done && (
+      {!task.done && task.day && (
         // a "⇄" icon with the native day picker laid invisibly on top (works with touch on iPad/phone)
         <span className="relative shrink-0 text-stone-300 hover:text-stone-600" title="ย้ายไปวันอื่น">
           ⇄

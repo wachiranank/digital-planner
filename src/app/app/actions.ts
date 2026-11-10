@@ -35,7 +35,8 @@ export async function addTask(form: FormData) {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return;
   const dayInput = form.get("day");
-  const baseDay = isDay(dayInput) ? dayInput : todayBangkok();
+  // from the Inbox page: no day unless the text names one ("… พรุ่งนี้")
+  const baseDay = form.get("inbox") ? null : isDay(dayInput) ? dayInput : todayBangkok();
   const { user } = await db();
   // Thai quick add: "ประชุม พรุ่งนี้ บ่าย 2 1 ชม." → day + time block (+ Google Calendar event)
   const p = parseQuick(title, todayBangkok());
@@ -55,7 +56,7 @@ export async function moveTask(id: string, newDay: string) {
   if (!task || task.day === newDay) return;
 
   const update: Record<string, unknown> = { day: newDay };
-  if (task.start_at && task.end_at) {
+  if (task.day && task.start_at && task.end_at) {
     const shift = Date.parse(`${newDay}T00:00:00+07:00`) - Date.parse(`${task.day}T00:00:00+07:00`);
     const start = new Date(Date.parse(task.start_at) + shift).toISOString();
     const end = new Date(Date.parse(task.end_at) + shift).toISOString();
@@ -74,12 +75,50 @@ export async function moveTask(id: string, newDay: string) {
   revalidatePath("/app", "layout");
 }
 
+/** Put a task back in the Inbox: no day, no time block (its Google event is removed), not a top-3 task. */
+export async function moveToInbox(id: string) {
+  const { supabase, user } = await db();
+  const { data: task } = await supabase
+    .from("planner_tasks")
+    .select("id, gcal_event_id, recur_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!task || task.recur_id) return; // repeating copies have their own schedule
+  if (task.gcal_event_id) {
+    const token = await getAccessToken(user.id);
+    if (token) await deleteEvent(token, task.gcal_event_id).catch(() => {});
+  }
+  await supabase
+    .from("planner_tasks")
+    .update({ day: null, start_at: null, end_at: null, gcal_event_id: null, is_priority: false, reminded_at: null })
+    .eq("id", id);
+  revalidatePath("/app", "layout");
+}
+
+/** Today page: deal with every unfinished task left over from earlier days in one go. */
+export async function rolloverAll(target: "today" | "inbox") {
+  const { supabase } = await db();
+  const today = todayBangkok();
+  const { data } = await supabase
+    .from("planner_tasks")
+    .select("id")
+    .eq("done", false)
+    .is("recur_id", null)
+    .lt("day", today);
+  for (const t of data ?? []) {
+    if (target === "inbox") await moveToInbox(t.id);
+    else await moveTask(t.id, today);
+  }
+  revalidatePath("/app", "layout");
+}
+
 export async function toggleDone(id: string, done: boolean) {
   const { supabase, user, task } = await getTask(id);
   if (!task) return;
   await supabase
     .from("planner_tasks")
-    .update({ done, done_at: done ? new Date().toISOString() : null })
+    // an Inbox task finished counts as done today (so it shows up in today's progress and the review)
+    .update({ done, done_at: done ? new Date().toISOString() : null, ...(done && !task.day ? { day: todayBangkok() } : {}) })
     .eq("id", id);
   // mirror completion in Google Calendar with a ✓ prefix
   if (task.gcal_event_id) {
@@ -101,7 +140,9 @@ export async function togglePriority(id: string, isPriority: boolean) {
       .eq("done", false);
     if ((count ?? 0) >= 3) return;
   }
-  await supabase.from("planner_tasks").update({ is_priority: isPriority }).eq("id", id);
+  let q = supabase.from("planner_tasks").update({ is_priority: isPriority }).eq("id", id);
+  if (isPriority) q = q.not("day", "is", null); // Inbox tasks can't be a top-3 task
+  await q;
   revalidatePath("/app", "layout");
 }
 
@@ -233,7 +274,7 @@ export async function setRepeat(id: string, rule: string) {
     .select("id, title, day, tag, recur_id")
     .eq("id", id)
     .maybeSingle();
-  if (!task) return;
+  if (!task || !task.day) return; // an Inbox task needs a day before it can repeat
   const today = todayBangkok();
 
   if (task.recur_id) {
