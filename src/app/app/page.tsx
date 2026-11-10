@@ -10,6 +10,7 @@ import { AppNav } from "./nav";
 import { TaskRow, type Task } from "./task-row";
 import { HabitsCard, type HabitData } from "./habits-card";
 import { PlanRow, RolloverAllButtons } from "./plan-row";
+import { CloseDayCard } from "./close-day-card";
 import { ensureRecurring, addDays } from "@/lib/tasks";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function PlannerToday() {
   await ensureRecurring(user.id, addDays(today, 6));
   // Today's tasks + unfinished one-off tasks from earlier days (auto carry-over;
   // a missed repeating task does not pile up — the next copy is already scheduled)
-  const [{ data }, { data: habitRows }] = await Promise.all([
+  const [{ data }, { data: habitRows }, { data: dayNote }] = await Promise.all([
     supabase
       .from("planner_tasks")
       .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, notes, tag, checklist, recur_id, recur:planner_recurring(rule, active)")
@@ -40,6 +41,7 @@ export default async function PlannerToday() {
       .eq("active", true)
       .gte("planner_habit_logs.day", addDays(today, -90))
       .order("created_at"),
+    supabase.from("planner_day_notes").select("mood, note").eq("day", today).maybeSingle(),
   ]);
   const tags = await getTags(supabase);
   const tasks = (data ?? []).map((t) => ({
@@ -126,6 +128,9 @@ export default async function PlannerToday() {
   const greeting = hour < 12 ? "สวัสดีตอนเช้า ☀️" : hour < 17 ? "สวัสดีตอนบ่าย 🌤️" : "สวัสดีตอนเย็น 🌙";
   const firstName = (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? "";
   const cal = !!token;
+  // "ปิดวัน" shows from 17:00 (or once something was written for today)
+  const showCloseDay = hour >= 17 || !!(dayNote?.mood || dayNote?.note);
+  const todays = tasks.filter((t) => t.day === today);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 md:py-8">
@@ -177,6 +182,16 @@ export default async function PlannerToday() {
         <button className="rounded-xl bg-emerald-600 px-5 font-semibold text-white hover:bg-emerald-700">เพิ่ม</button>
       </form>
       <p className="mt-1.5 px-2 text-xs text-stone-400">พิมพ์วัน/เวลาภาษาไทยได้เลย ระบบลงปฏิทินให้อัตโนมัติ</p>
+
+      {showCloseDay && (
+        <CloseDayCard
+          done={todays.filter((t) => t.done).length}
+          total={todays.length}
+          left={tasks.filter((t) => !t.done && !t.recur_id).length}
+          mood={dayNote?.mood ?? null}
+          note={dayNote?.note ?? null}
+        />
+      )}
 
       <div className="mt-6 flex flex-col gap-6 md:grid md:grid-cols-[minmax(0,1fr)_340px] md:items-start lg:grid-cols-[minmax(0,1fr)_380px]">
         {/* 1. top 3 */}

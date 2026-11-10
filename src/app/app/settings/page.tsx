@@ -10,6 +10,7 @@ import { GoogleButton } from "../../google-button";
 import { signOut } from "../actions";
 import { AppNav } from "../nav";
 import { NotifyCard } from "../notify-card";
+import { RoutinePrefs } from "../routine-prefs";
 import { LineCard } from "../line-card";
 import { TagManager } from "./tag-manager";
 
@@ -37,7 +38,7 @@ export default async function Settings() {
     getTags(supabase),
     supabase
       .from("planner_profiles")
-      .select("remind_minutes, daily_digest, line_user_id, line_notify, license_key")
+      .select("remind_minutes, daily_digest, evening_review, line_user_id, line_notify, license_key")
       .eq("user_id", user.id)
       .maybeSingle(),
     getAccessToken(user.id),
@@ -52,6 +53,7 @@ export default async function Settings() {
 
       <nav className="mt-3 flex flex-wrap gap-2 text-sm">
         {[
+          ["#routine", "🌗 เช้า–เย็น"],
           ["#notify", "🔔 การแจ้งเตือน"],
           ...(line ? [["#line", "💬 LINE"]] : []),
           ["#calendar", "🗓️ Google Calendar"],
@@ -65,12 +67,15 @@ export default async function Settings() {
       </nav>
 
       <div className="mt-8 space-y-10">
+        <Section id="routine" title="ตัวช่วยวางแผนรายวัน" hint="ส่งทางแจ้งเตือนบนเครื่องและ LINE (ถ้าเชื่อมไว้)">
+          <RoutinePrefs dailyDigest={prefs?.daily_digest ?? true} eveningReview={prefs?.evening_review ?? true} />
+        </Section>
+
         <Section id="notify" title="การแจ้งเตือนบนเครื่อง" hint="เตือนก่อนเริ่มงาน สรุปงานตอนเช้า และชวนทบทวนทุกวันอาทิตย์">
           {vapidKey ? (
             <NotifyCard
               vapidKey={vapidKey}
               remindMinutes={prefs?.remind_minutes ?? 10}
-              dailyDigest={prefs?.daily_digest ?? true}
             />
           ) : (
             <p className="text-sm text-stone-500">ยังไม่ได้ตั้งค่า</p>
@@ -78,7 +83,7 @@ export default async function Settings() {
         </Section>
 
         {line && (
-          <Section id="line" title="LINE" hint="รับแจ้งเตือนทางแชท พิมพ์ &quot;วันนี้&quot; เพื่อดูงาน หรือ &quot;เพิ่ม ...&quot; เพื่อเพิ่มงาน">
+          <Section id="line" title="LINE" hint="รับแจ้งเตือนทางแชท พิมพ์ &quot;วันนี้&quot; ดูงาน, &quot;เพิ่ม ...&quot; เพิ่มงาน, &quot;จด ...&quot; ลง Inbox, &quot;ปิดวัน&quot; สรุปวันนี้">
             <LineCard linked={!!prefs?.line_user_id} notify={prefs?.line_notify ?? true} botId={lineBotId()} />
           </Section>
         )}
