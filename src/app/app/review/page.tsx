@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess, todayBangkok } from "@/lib/access";
 import { moveOpenToNextWeek, saveReview } from "../actions";
 import { AppNav } from "../nav";
+import { moodEmoji } from "@/lib/moods";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
   const sunday = addDays(monday, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 
-  const [{ data: taskData }, { data: review }, { data: prev }, { data: habitRows }] = await Promise.all([
+  const [{ data: taskData }, { data: review }, { data: prev }, { data: habitRows }, { data: noteRows }] = await Promise.all([
     supabase
       .from("planner_tasks")
       .select("id, title, day, is_priority, done, start_at, end_at")
@@ -46,7 +47,9 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
       .gte("planner_habit_logs.day", monday)
       .lte("planner_habit_logs.day", sunday)
       .order("created_at"),
+    supabase.from("planner_day_notes").select("day, mood, note").gte("day", monday).lte("day", sunday).order("day"),
   ]);
+  const notes = (noteRows ?? []) as { day: string; mood: number | null; note: string | null }[];
   const elapsed = Math.max(1, Math.min(7, Math.round((Date.parse(`${today < sunday ? today : sunday}T12:00:00Z`) - Date.parse(`${monday}T12:00:00Z`)) / 864e5) + 1));
   const habits = (habitRows ?? []).map((h) => ({
     id: h.id as string,
@@ -176,6 +179,21 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
           )}
         </section>
       </div>
+
+      {notes.length > 0 && (
+        <section className="mt-8 rounded-xl bg-white p-5 ring-1 ring-stone-200">
+          <h2 className="font-semibold">📔 บันทึกปิดวัน</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {notes.map((n) => (
+              <li key={n.day} className="flex gap-3">
+                <span className="w-20 shrink-0 text-stone-400">{fmt(n.day, { weekday: "short", day: "numeric" })}</span>
+                <span className="w-6 shrink-0 text-center">{moodEmoji(n.mood)}</span>
+                <span className="min-w-0 flex-1 whitespace-pre-line text-stone-700">{n.note ?? ""}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form action={saveReview} className="mt-8 space-y-4 rounded-xl bg-white p-5 ring-1 ring-stone-200">
         <input type="hidden" name="week_start" value={monday} />

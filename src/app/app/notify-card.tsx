@@ -14,11 +14,9 @@ function b64ToBytes(b64: string) {
 export function NotifyCard({
   vapidKey,
   remindMinutes,
-  dailyDigest,
 }: {
   vapidKey: string;
   remindMinutes: number;
-  dailyDigest: boolean;
 }) {
   const [state, setState] = useState<State>("loading");
   const [msg, setMsg] = useState("");
@@ -119,16 +117,6 @@ export function NotifyCard({
               <option value={30}>30 นาที</option>
               <option value={60}>1 ชั่วโมง</option>
             </select>
-          </label>
-          <label className="flex items-center justify-between gap-2">
-            <span>สรุปงานตอนเช้า (07:30)</span>
-            <input
-              type="checkbox"
-              name="daily_digest"
-              defaultChecked={dailyDigest}
-              onChange={(e) => e.currentTarget.form?.requestSubmit()}
-              className="h-5 w-5 accent-emerald-600"
-            />
           </label>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={test} disabled={pending} className="text-emerald-700 underline">

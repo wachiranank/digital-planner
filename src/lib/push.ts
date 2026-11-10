@@ -40,7 +40,11 @@ export async function pushToUser(userId: string, payload: PushPayload): Promise<
 }
 
 /** Web push to every device + LINE message if the user linked LINE. */
-export async function notifyUser(userId: string, payload: PushPayload, opts: { line?: boolean } = {}) {
+export async function notifyUser(
+  userId: string,
+  payload: PushPayload,
+  opts: { line?: boolean; lineText?: string; quick?: string[] } = {},
+) {
   const devices = await pushToUser(userId, payload);
   let line = false;
   if (opts.line !== false) {
@@ -52,7 +56,8 @@ export async function notifyUser(userId: string, payload: PushPayload, opts: { l
     if (p?.line_user_id && p.line_notify) {
       const host = appHost();
       const link = host ? `\n\nhttps://${host}${payload.url ?? "/app"}` : "";
-      line = await linePush(p.line_user_id, `${payload.title}\n${payload.body}${link}`);
+      // LINE can carry a longer, interactive text (with tap-to-reply buttons) than a push notification
+      line = await linePush(p.line_user_id, `${payload.title}\n${opts.lineText ?? payload.body}${link}`, opts.quick);
     }
   }
   return { devices, line };

@@ -7,6 +7,7 @@ import { todayBangkok } from "@/lib/access";
 import { createEvent, deleteEvent, getAccessToken, patchEvent } from "@/lib/google";
 import { parseQuick } from "@/lib/thai-parse";
 import { createTaskFor, ensureRecurring, addDays, weekdayIdx } from "@/lib/tasks";
+import { moveLeftoversToTomorrow, saveDayNote, shiftTaskDay } from "@/lib/day";
 import { isColor, isRule, type CheckItem } from "@/lib/tags";
 import { validTag } from "@/lib/tags-server";
 
@@ -54,24 +55,7 @@ export async function moveTask(id: string, newDay: string) {
     .eq("id", id)
     .maybeSingle();
   if (!task || task.day === newDay) return;
-
-  const update: Record<string, unknown> = { day: newDay };
-  if (task.day && task.start_at && task.end_at) {
-    const shift = Date.parse(`${newDay}T00:00:00+07:00`) - Date.parse(`${task.day}T00:00:00+07:00`);
-    const start = new Date(Date.parse(task.start_at) + shift).toISOString();
-    const end = new Date(Date.parse(task.end_at) + shift).toISOString();
-    Object.assign(update, { start_at: start, end_at: end, reminded_at: null });
-    if (task.gcal_event_id) {
-      const token = await getAccessToken(user.id);
-      if (token) {
-        await patchEvent(token, task.gcal_event_id, {
-          start: { dateTime: start, timeZone: "Asia/Bangkok" },
-          end: { dateTime: end, timeZone: "Asia/Bangkok" },
-        }).catch(() => {});
-      }
-    }
-  }
-  await supabase.from("planner_tasks").update(update).eq("id", id);
+  await shiftTaskDay(user.id, task, newDay);
   revalidatePath("/app", "layout");
 }
 
@@ -233,6 +217,24 @@ export async function moveOpenToNextWeek(form: FormData) {
     .gte("day", monday)
     .lte("day", sunday);
   for (const t of data ?? []) await moveTask(t.id, next);
+  revalidatePath("/app", "layout");
+}
+
+// ---------- close the day ----------
+/** Today page "ปิดวัน" card: mood (1–5) and a short note for today. */
+export async function saveTodayNote(form: FormData) {
+  const { user } = await db();
+  const mood = Number(form.get("mood"));
+  await saveDayNote(user.id, todayBangkok(), {
+    mood: mood >= 1 && mood <= 5 ? mood : null,
+    note: String(form.get("note") ?? ""),
+  });
+  revalidatePath("/app", "layout");
+}
+
+export async function moveLeftoversTomorrow() {
+  const { user } = await db();
+  await moveLeftoversToTomorrow(user.id, todayBangkok());
   revalidatePath("/app", "layout");
 }
 

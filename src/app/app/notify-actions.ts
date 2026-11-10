@@ -50,7 +50,17 @@ export async function setReminderPrefs(form: FormData) {
   const minutes = [0, 5, 10, 15, 30, 60].includes(Number(form.get("remind_minutes"))) ? Number(form.get("remind_minutes")) : 10;
   await supabaseAdmin()
     .from("planner_profiles")
-    .update({ remind_minutes: minutes, daily_digest: form.get("daily_digest") === "on" })
+    .update({ remind_minutes: minutes })
+    .eq("user_id", user.id);
+  revalidatePath("/app", "layout");
+}
+
+/** Morning plan (07:30) and evening "ปิดวัน" (20:00) messages — sent by web push and/or LINE. */
+export async function setRoutinePrefs(form: FormData) {
+  const user = await me();
+  await supabaseAdmin()
+    .from("planner_profiles")
+    .update({ daily_digest: form.get("daily_digest") === "on", evening_review: form.get("evening_review") === "on" })
     .eq("user_id", user.id);
   revalidatePath("/app", "layout");
 }

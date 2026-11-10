@@ -23,10 +23,26 @@ async function call(path: string, body: unknown) {
   return res.ok;
 }
 
+/** Tap-to-send buttons under a message (each sends its own label as text; label ≤ 20 chars, max 13). */
+const textMsg = (text: string, quick?: string[]) => ({
+  type: "text",
+  text: text.slice(0, 5000),
+  ...(quick?.length
+    ? {
+        quickReply: {
+          items: quick.slice(0, 13).map((label) => ({
+            type: "action",
+            action: { type: "message", label: label.slice(0, 20), text: label },
+          })),
+        },
+      }
+    : {}),
+});
+
 /** Free: answers a message the user just sent. */
-export const lineReply = (replyToken: string, text: string) =>
-  call("reply", { replyToken, messages: [{ type: "text", text: text.slice(0, 5000) }] });
+export const lineReply = (replyToken: string, text: string, quick?: string[]) =>
+  call("reply", { replyToken, messages: [textMsg(text, quick)] });
 
 /** Push: counts toward the Official Account's monthly message quota. */
-export const linePush = (to: string, text: string) =>
-  lineConfigured() ? call("push", { to, messages: [{ type: "text", text: text.slice(0, 5000) }] }) : Promise.resolve(false);
+export const linePush = (to: string, text: string, quick?: string[]) =>
+  lineConfigured() ? call("push", { to, messages: [textMsg(text, quick)] }) : Promise.resolve(false);

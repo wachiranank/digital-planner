@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { notifyUser } from "@/lib/push";
 import { TRIAL_DAYS, todayBangkok } from "@/lib/access";
+import { dayStats, eveningText, morningText, openForToday } from "@/lib/day";
+import { MOODS } from "@/lib/moods";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -10,6 +12,7 @@ export const maxDuration = 60;
 //  1) "starting soon" reminders for time-blocked tasks
 //  2) a morning digest (from 07:30 Bangkok)
 //  3) a Sunday-evening nudge to do the weekly review (from 18:00)
+//  4) an evening "close the day" summary (from 20:00; LINE gets mood buttons)
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
@@ -33,13 +36,13 @@ export async function GET(req: NextRequest) {
 
   const { data: profiles } = await admin
     .from("planner_profiles")
-    .select("user_id, trial_started_at, license_key, remind_minutes, daily_digest, last_digest_day, last_review_nudge")
+    .select("user_id, trial_started_at, license_key, remind_minutes, daily_digest, last_digest_day, last_review_nudge, evening_review, last_evening_day")
     .in("user_id", userIds);
   const active = (profiles ?? []).filter(
     (p) => p.license_key || now - Date.parse(p.trial_started_at) < TRIAL_DAYS * 864e5,
   );
   const byUser = new Map(active.map((p) => [p.user_id as string, p]));
-  const stats = { reminders: 0, digests: 0, nudges: 0 };
+  const stats = { reminders: 0, digests: 0, nudges: 0, evenings: 0 };
 
   // 1) task reminders: start within each user's lead time (max 60 min), not yet reminded
   const { data: due } = await admin
@@ -72,13 +75,7 @@ export async function GET(req: NextRequest) {
   if (minutesOfDay >= 7 * 60 + 30 && minutesOfDay < 11 * 60) {
     for (const p of active) {
       if (!p.daily_digest || p.last_digest_day === today) continue;
-      const { data: tasks } = await admin
-        .from("planner_tasks")
-        .select("title, is_priority, day")
-        .eq("user_id", p.user_id)
-        .eq("done", false)
-        .lte("day", today);
-      const list = tasks ?? [];
+      const list = await openForToday(p.user_id, today);
       const top = list.filter((t) => t.is_priority).map((t) => t.title);
       const carried = list.filter((t) => t.day < today).length;
       const body =
@@ -88,7 +85,8 @@ export async function GET(req: NextRequest) {
               `วันนี้มี ${list.length} งาน${carried ? ` (ยกมา ${carried})` : ""}`,
               top.length ? `สำคัญ: ${top.slice(0, 3).join(" · ")}` : "ยังไม่ได้เลือกงานสำคัญ 3 อย่าง",
             ].join("\n");
-      await notifyUser(p.user_id, { title: "☀️ สวัสดีตอนเช้า", body, url: "/app", tag: "digest" });
+      // LINE gets the numbered list so the user can answer "สำคัญ 1 3 4" right in the chat
+      await notifyUser(p.user_id, { title: "☀️ สวัสดีตอนเช้า", body, url: "/app", tag: "digest" }, { lineText: morningText(list, today) });
       await admin.from("planner_profiles").update({ last_digest_day: today }).eq("user_id", p.user_id);
       stats.digests++;
     }
@@ -106,6 +104,31 @@ export async function GET(req: NextRequest) {
       });
       await admin.from("planner_profiles").update({ last_review_nudge: today }).eq("user_id", p.user_id);
       stats.nudges++;
+    }
+  }
+
+  // 4) 20:00–22:00: close the day — what got done, what's left, how the day felt. Skipped on an empty day.
+  if (minutesOfDay >= 20 * 60 && minutesOfDay < 22 * 60) {
+    for (const p of active) {
+      if (!p.evening_review || p.last_evening_day === today) continue;
+      await admin.from("planner_profiles").update({ last_evening_day: today }).eq("user_id", p.user_id);
+      const s = await dayStats(p.user_id, today);
+      if (s.total === 0 && s.open.length === 0) continue;
+      const left = s.open.filter((t) => !t.recur_id).length;
+      await notifyUser(
+        p.user_id,
+        {
+          title: "🌙 ปิดวัน",
+          body: `เสร็จ ${s.done}/${s.total} งาน${left ? ` · เหลือ ${left} งาน` : " 🎉"} — แตะเพื่อสรุปวันนี้`,
+          url: "/app#close-day",
+          tag: "evening",
+        },
+        {
+          lineText: eveningText(s, today),
+          quick: [...(left ? ["ย้ายพรุ่งนี้"] : []), ...MOODS.map((m) => `วันนี้ ${m.e}`)],
+        },
+      );
+      stats.evenings++;
     }
   }
 

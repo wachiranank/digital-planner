@@ -4,6 +4,8 @@ import { lineReply, verifyLineSignature } from "@/lib/line";
 import { todayBangkok } from "@/lib/access";
 import { parseQuick } from "@/lib/thai-parse";
 import { createTaskFor } from "@/lib/tasks";
+import { dayStats, eveningText, morningText, moveLeftoversToTomorrow, openForToday, saveDayNote, setTopByNumber } from "@/lib/day";
+import { MOODS, moodFromEmoji } from "@/lib/moods";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,7 @@ type LineEvent = {
 };
 
 const HELP =
-  "• พิมพ์ \"วันนี้\" เพื่อดูงานวันนี้\n• พิมพ์ \"เพิ่ม ...\" เพื่อเพิ่มงาน เช่น\n  เพิ่ม ประชุมลูกค้า พรุ่งนี้ บ่าย 2 1 ชม.\n• พิมพ์ \"จด ...\" เพื่อจดไว้ใน Inbox ก่อน (ยังไม่ต้องเลือกวัน) เช่น\n  จด ต่อภาษีรถ\n\nยังไม่ได้เชื่อมบัญชี? เปิดแอป → ตั้งค่า → \"เชื่อม LINE\" แล้วส่งรหัส 6 ตัวมาที่แชทนี้";
+  "• พิมพ์ \"วันนี้\" เพื่อดูงานวันนี้ (มีเลขกำกับ)\n• พิมพ์ \"สำคัญ 1 3 4\" เพื่อเลือก 3 งานสำคัญจากเลขในลิสต์\n• พิมพ์ \"ปิดวัน\" เพื่อสรุปวันนี้ / \"ย้ายพรุ่งนี้\" ย้ายงานที่เหลือ / \"บันทึก ...\" จดว่าวันนี้เป็นยังไง\n• พิมพ์ \"เพิ่ม ...\" เพื่อเพิ่มงาน เช่น\n  เพิ่ม ประชุมลูกค้า พรุ่งนี้ บ่าย 2 1 ชม.\n• พิมพ์ \"จด ...\" เพื่อจดไว้ใน Inbox ก่อน (ยังไม่ต้องเลือกวัน) เช่น\n  จด ต่อภาษีรถ\n\nยังไม่ได้เชื่อมบัญชี? เปิดแอป → ตั้งค่า → \"เชื่อม LINE\" แล้วส่งรหัส 6 ตัวมาที่แชทนี้";
 
 export async function POST(req: NextRequest) {
   const raw = await req.text();
@@ -65,23 +67,65 @@ export async function POST(req: NextRequest) {
 
     const { data: me } = await admin.from("planner_profiles").select("user_id").eq("line_user_id", lineId).maybeSingle();
 
-    // 2) "today" command
+    const MOOD_QUICK = MOODS.map((m) => `วันนี้ ${m.e}`);
+
+    // 2) "today": numbered list, so the user can pick the top 3 by number
     if (me && /^(วันนี้|today)$/i.test(text)) {
       const today = todayBangkok();
-      const { data: tasks } = await admin
-        .from("planner_tasks")
-        .select("title, is_priority, start_at, day")
-        .eq("user_id", me.user_id)
-        .eq("done", false)
-        .lte("day", today)
-        .order("start_at", { ascending: true, nullsFirst: false });
-      const list = tasks ?? [];
-      const time = (s: string) =>
-        new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }).format(new Date(s));
-      const lines = list.map(
-        (t) => `${t.is_priority ? "★" : "•"} ${t.start_at && t.day === today ? `${time(t.start_at)} ` : ""}${t.title}`,
+      await lineReply(ev.replyToken, morningText(await openForToday(me.user_id, today), today));
+      continue;
+    }
+
+    // 2b) pick today's top 3: "สำคัญ 1 3 4" / "สำคัญ 1,3"
+    const top = text.match(/^(?:สำคัญ|top)\s*([\d๐-๙\s,]+)$/i);
+    if (me && top) {
+      const today = todayBangkok();
+      const nums = top[1]
+        .replace(/[๐-๙]/g, (d) => String("๐๑๒๓๔๕๖๗๘๙".indexOf(d)))
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map(Number);
+      const picked = await setTopByNumber(me.user_id, today, nums);
+      await lineReply(
+        ev.replyToken,
+        picked
+          ? `🎯 3 งานสำคัญวันนี้\n${picked.map((t, i) => `${i + 1}. ${t.title}`).join("\n")}\n\nสู้ๆ ครับ 💪`
+          : 'ไม่พบเลขงานนี้ — พิมพ์ "วันนี้" เพื่อดูเลขงานก่อน',
       );
-      await lineReply(ev.replyToken, list.length ? `งานวันนี้ (${list.length})\n${lines.join("\n")}` : "วันนี้ไม่มีงานค้าง 🎉");
+      continue;
+    }
+
+    // 2c) close the day: summary + what's left + mood buttons
+    if (me && /^(ปิดวัน|สรุปวันนี้)$/.test(text)) {
+      const today = todayBangkok();
+      const s = await dayStats(me.user_id, today);
+      const left = s.open.filter((t) => !t.recur_id).length;
+      await lineReply(ev.replyToken, eveningText(s, today), [...(left ? ["ย้ายพรุ่งนี้"] : []), ...MOOD_QUICK]);
+      continue;
+    }
+
+    // 2d) move what's left to tomorrow
+    if (me && /^ย้าย(ไป)?พรุ่งนี้$/.test(text)) {
+      const n = await moveLeftoversToTomorrow(me.user_id, todayBangkok());
+      await lineReply(
+        ev.replyToken,
+        n ? `➡️ ย้าย ${n} งานไปพรุ่งนี้แล้ว พักผ่อนได้เลย 🌙` : "ไม่มีงานค้างให้ย้าย 🎉",
+        MOOD_QUICK,
+      );
+      continue;
+    }
+
+    // 2e) how the day felt: "วันนี้ 😄" (quick-reply button) / "บันทึก วันนี้ปิดดีลได้"
+    const mood = text.match(/^วันนี้\s*(\S+)$/);
+    const moodV = mood ? moodFromEmoji(mood[1]) : null;
+    const note = text.match(/^(?:บันทึก|note)\s+([\s\S]+)$/i);
+    if (me && (moodV || note)) {
+      const today = todayBangkok();
+      await saveDayNote(me.user_id, today, moodV ? { mood: moodV } : { note: note![1] });
+      await lineReply(
+        ev.replyToken,
+        moodV ? 'บันทึกแล้ว ✍️ อยากเล่าเพิ่ม พิมพ์ "บันทึก ..." ได้เลย' : "บันทึกแล้ว ✍️ ดูย้อนหลังได้ในหน้า ทบทวน",
+      );
       continue;
     }
 
