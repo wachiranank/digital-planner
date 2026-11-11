@@ -33,7 +33,7 @@ export function GoogleButton({
       onClick={signIn}
       className={
         variant === "primary"
-          ? "w-full rounded-xl bg-emerald-600 px-4 py-3 text-lg font-semibold text-white hover:bg-emerald-700"
+          ? "w-full rounded-xl bg-brand-600 px-4 py-3 text-lg font-semibold text-white hover:bg-brand-700"
           : "rounded-lg bg-white px-3 py-2 text-sm font-medium ring-1 ring-stone-300 hover:bg-stone-100"
       }
     >

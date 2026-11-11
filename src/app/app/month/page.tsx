@@ -7,7 +7,7 @@ import { addDays, ensureRecurring, weekdayIdx } from "@/lib/tasks";
 import { getTags } from "@/lib/tags-server";
 import { findTag, tagStyle } from "@/lib/tags";
 import { addTask } from "../actions";
-import { AppNav } from "../nav";
+import { ViewSwitch } from "../view-switch";
 import { WeekTask, type WeekTaskData } from "../week/week-task";
 import { MonthChip } from "./month-chip";
 
@@ -92,7 +92,7 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <main className="mx-auto max-w-[1400px] px-5 py-6 md:py-10">
-      <AppNav active="month" />
+      <ViewSwitch active="month" />
 
       <header className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -138,13 +138,13 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
                   key={d}
                   className={`relative min-h-16 border-b border-r border-stone-100 p-1 text-left sm:min-h-24 md:min-h-28 ${
                     inMonth(d) ? "" : "bg-stone-50/70 text-stone-400"
-                  } ${isSel ? "bg-emerald-50 ring-2 ring-inset ring-emerald-500" : "hover:bg-stone-50"}`}
+                  } ${isSel ? "bg-brand-50 ring-2 ring-inset ring-brand-500" : "hover:bg-stone-50"}`}
                 >
                   {/* the whole cell selects the day; task lines on top open the edit popup */}
                   <Link href={href(d)} scroll={false} className="absolute inset-0" aria-label={thaiLongDate(d)} />
                   <span
                     className={`pointer-events-none relative inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-semibold ${
-                      isToday ? "bg-emerald-600 text-white" : ""
+                      isToday ? "bg-brand-600 text-white" : ""
                     }`}
                   >
                     {Number(d.slice(8, 10))}
@@ -213,9 +213,9 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
               placeholder="+ เพิ่มงาน เช่น ประชุม 10 โมง"
               className="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm"
             />
-            <button className="rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white">เพิ่ม</button>
+            <button className="rounded-lg bg-brand-600 px-3 text-sm font-semibold text-white">เพิ่ม</button>
           </form>
-          <Link href={`/app/week?w=${Math.round((Date.parse(selWeek[0]) - Date.parse(addDays(today, -weekdayIdx(today)))) / (7 * 864e5))}`} className="mt-3 inline-block text-sm text-emerald-700 underline">
+          <Link href={`/app/week?w=${Math.round((Date.parse(selWeek[0]) - Date.parse(addDays(today, -weekdayIdx(today)))) / (7 * 864e5))}`} className="mt-3 inline-block text-sm text-brand-700 underline">
             ดูสัปดาห์นี้ →
           </Link>
         </section>

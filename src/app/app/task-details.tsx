@@ -132,7 +132,7 @@ export function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[
           placeholder="โน้ต / รายละเอียด / ลิงก์"
           className="w-full rounded-md border border-stone-300 bg-white px-2 py-1.5"
         />
-        <button className="rounded-md bg-emerald-600 px-3 py-1.5 font-medium text-white">บันทึก</button>
+        <button className="rounded-md bg-brand-600 px-3 py-1.5 font-medium text-white">บันทึก</button>
       </form>
 
       <div>
@@ -144,7 +144,7 @@ export function TaskDetails({ task, tags, onSaved }: { task: Task; tags: TagDef[
                 type="checkbox"
                 checked={it.d}
                 onChange={(e) => saveItems(items.map((x, j) => (j === i ? { ...x, d: e.target.checked } : x)))}
-                className="h-4 w-4 accent-emerald-600"
+                className="h-4 w-4 accent-brand-600"
               />
               <span className={`flex-1 ${it.d ? "text-stone-400 line-through" : ""}`}>{it.t}</span>
               <button onClick={() => saveItems(items.filter((_, j) => j !== i))} className="text-stone-300 hover:text-red-500" aria-label="ลบ">

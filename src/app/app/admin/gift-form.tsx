@@ -56,18 +56,18 @@ export function GiftForm({ products, appUrl }: { products: { id: string; name: s
       </form>
 
       {state?.ok && message && (
-        <div className="space-y-3 rounded-xl bg-emerald-50 p-4 ring-1 ring-emerald-200">
-          <p className="text-sm text-emerald-800">สร้างแล้วสำหรับ {state.email}</p>
-          <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-emerald-200">
+        <div className="space-y-3 rounded-xl bg-brand-50 p-4 ring-1 ring-brand-200">
+          <p className="text-sm text-brand-800">สร้างแล้วสำหรับ {state.email}</p>
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-brand-200">
             <span className="font-mono text-lg">{state.key}</span>
-            <button onClick={() => copy(state.key, "key")} className="text-sm font-medium text-emerald-700">
+            <button onClick={() => copy(state.key, "key")} className="text-sm font-medium text-brand-700">
               {copied === "key" ? "คัดลอกแล้ว ✓" : "คัดลอก key"}
             </button>
           </div>
-          <pre className="whitespace-pre-wrap rounded-lg bg-white p-3 text-sm ring-1 ring-emerald-200">{message}</pre>
+          <pre className="whitespace-pre-wrap rounded-lg bg-white p-3 text-sm ring-1 ring-brand-200">{message}</pre>
           <button
             onClick={() => copy(message, "msg")}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white"
+            className="w-full rounded-lg bg-brand-600 px-4 py-2 font-medium text-white"
           >
             {copied === "msg" ? "คัดลอกแล้ว ✓" : "📋 คัดลอกข้อความส่งเพื่อน (วางใน LINE ได้)"}
           </button>

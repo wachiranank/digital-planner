@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { deleteTask, moveTask, moveToInbox, rolloverAll, toggleDone } from "./actions";
-import { findTag, tagStyle, type TagDef } from "@/lib/tags";
+import { findTag, ringClass, tagStyle, type TagDef } from "@/lib/tags";
+import { CheckCircle, DRAG_TYPE, dragData } from "./task-row";
 import { TaskModal } from "./task-modal";
 import type { Task } from "./task-details";
 
@@ -15,7 +16,7 @@ const shortDay = (day: string) =>
   );
 
 const chip =
-  "rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition-colors disabled:opacity-40";
+  "rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors disabled:opacity-40";
 
 /**
  * A task that still needs a decision: left over from an earlier day ("carried")
@@ -41,17 +42,20 @@ export function PlanRow({
   const items = task.checklist ?? [];
 
   return (
-    <li className={`px-4 py-3 transition-colors hover:bg-stone-50 ${pending ? "opacity-50" : ""}`}>
-      <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={task.done}
-          onChange={(e) => start(() => toggleDone(task.id, e.target.checked))}
-          className="h-5 w-5 shrink-0 cursor-pointer accent-emerald-600"
-          aria-label="ทำเสร็จแล้ว"
-        />
+    <li
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(DRAG_TYPE, dragData(task));
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      className={`border-b border-stone-200/70 py-3 last:border-0 lg:-mx-3 lg:cursor-grab lg:rounded-xl lg:border-0 lg:px-3 lg:hover:bg-white lg:hover:shadow-sm ${pending ? "opacity-50" : ""}`}
+    >
+      <div className="flex items-start gap-3">
+        <span className="pt-0.5">
+          <CheckCircle done={task.done} ring={ringClass(tag, false)} onToggle={(v) => start(() => toggleDone(task.id, v))} />
+        </span>
         <button onClick={() => setOpen(true)} className="min-w-0 flex-1 text-left" title="แก้ไขงาน">
-          <span className="block truncate text-stone-800">{task.title}</span>
+          <span className="block text-[17px] leading-snug text-stone-900 lg:text-[15px]">{task.title}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
             {tag && style && <span className={`rounded px-1.5 py-0.5 ${style.chip}`}>{tag.label}</span>}
             {mode === "carried" && task.day && <span className="text-amber-700">จาก {shortDay(task.day)}</span>}
@@ -65,11 +69,11 @@ export function PlanRow({
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-8">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-9">
         <button
           disabled={pending}
           onClick={() => start(() => moveTask(task.id, today))}
-          className={`${chip} bg-emerald-50 text-emerald-800 ring-emerald-200 hover:bg-emerald-100`}
+          className={`${chip} bg-brand-50 text-brand-800 ring-brand-200 hover:bg-brand-100`}
         >
           ▶ ทำวันนี้
         </button>
@@ -138,7 +142,7 @@ export function RolloverAllButtons() {
       <button
         disabled={pending}
         onClick={() => start(() => rolloverAll("today"))}
-        className={`${chip} bg-emerald-600 text-white ring-emerald-600 hover:bg-emerald-700`}
+        className={`${chip} bg-brand-600 text-white ring-brand-600 hover:bg-brand-700`}
       >
         ทำวันนี้ทั้งหมด
       </button>

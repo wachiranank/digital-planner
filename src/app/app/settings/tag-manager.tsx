@@ -60,7 +60,7 @@ function CustomRow({ tag }: { tag: TagDef }) {
                 return updateTag(fd);
               })
             }
-            className="rounded-md bg-emerald-600 px-3 py-1 text-sm font-medium text-white"
+            className="rounded-md bg-brand-600 px-3 py-1 text-sm font-medium text-white"
           >
             บันทึก
           </button>
@@ -111,7 +111,7 @@ export function TagManager({ tags }: { tags: TagDef[] }) {
               placeholder="เช่น ลูกค้า A, ครอบครัว, ฟรีแลนซ์"
               className="min-w-0 flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm"
             />
-            <button className="rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white">สร้าง</button>
+            <button className="rounded-md bg-brand-600 px-4 text-sm font-semibold text-white">สร้าง</button>
           </div>
           <ColorPicker value={color} onChange={setColor} />
         </form>

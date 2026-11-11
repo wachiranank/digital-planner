@@ -8,7 +8,6 @@ import { getTags } from "@/lib/tags-server";
 import { lineBotId, lineConfigured } from "@/lib/line";
 import { GoogleButton } from "../../google-button";
 import { signOut } from "../actions";
-import { AppNav } from "../nav";
 import { NotifyCard } from "../notify-card";
 import { RoutinePrefs } from "../routine-prefs";
 import { WatchCard, type TokenRow } from "../watch-card";
@@ -52,7 +51,6 @@ export default async function Settings() {
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-6 md:py-10">
-      <AppNav active="settings" />
       <h1 className="mt-6 text-2xl font-bold">ตั้งค่า</h1>
 
       <nav className="mt-3 flex flex-wrap gap-2 text-sm">
@@ -105,7 +103,7 @@ export default async function Settings() {
         <Section id="calendar" title="Google Calendar">
           <div className="flex items-center justify-between gap-3 rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200">
             {token ? (
-              <span className="text-emerald-700">✓ เชื่อมแล้ว — งานที่ลงเวลาจะขึ้นในปฏิทินอัตโนมัติ</span>
+              <span className="text-brand-700">✓ เชื่อมแล้ว — งานที่ลงเวลาจะขึ้นในปฏิทินอัตโนมัติ</span>
             ) : (
               <>
                 <span className="text-stone-600">ยังไม่ได้เชื่อม (หรือหมดอายุ) — เชื่อมเพื่อดูนัดและลงเวลางาน</span>
@@ -128,7 +126,7 @@ export default async function Settings() {
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-stone-500">สถานะ</span>
               {access.status === "licensed" ? (
-                <span className="font-medium text-emerald-700">✓ ใช้งานตลอดชีพ</span>
+                <span className="font-medium text-brand-700">✓ ใช้งานตลอดชีพ</span>
               ) : (
                 <Link href="/activate" className="font-medium text-amber-700 underline">
                   {access.status === "trial" ? `ทดลองใช้ เหลือ ${access.daysLeft} วัน · ใส่ license` : "หมดช่วงทดลอง · ใส่ license"}

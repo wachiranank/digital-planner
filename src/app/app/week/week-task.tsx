@@ -37,7 +37,7 @@ export function WeekTask({
         type="checkbox"
         checked={task.done}
         onChange={(e) => start(() => toggleDone(task.id, e.target.checked))}
-        className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
+        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
         aria-label="ทำเสร็จแล้ว"
       />
       <button
@@ -47,7 +47,7 @@ export function WeekTask({
       >
         {tag && <span className={`mr-1 inline-block h-2 w-2 rounded-full align-middle ${tagStyle(tag)!.dot}`} title={tag.label} />}
         {task.is_priority && !task.done && <span className="text-amber-500">★ </span>}
-        {task.start_at && <span className="font-mono text-xs text-emerald-700">{hhmm(task.start_at)} </span>}
+        {task.start_at && <span className="font-mono text-xs text-brand-700">{hhmm(task.start_at)} </span>}
         {task.title}
         {task.recur_id && <span className="ml-1 text-xs text-stone-400">🔁</span>}
         {items.length > 0 && (

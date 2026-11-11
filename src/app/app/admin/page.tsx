@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentAdmin } from "@/lib/admin";
-import { AppNav } from "../nav";
 import { GiftForm } from "./gift-form";
 import { revokeGift } from "./actions";
 import { RevokeButton } from "./revoke-button";
@@ -35,7 +34,6 @@ export default async function Admin() {
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-6 md:py-10">
-      <AppNav active="settings" />
       <h1 className="mt-6 text-2xl font-bold">🛠️ Admin</h1>
       <p className="mt-1 text-sm text-stone-500">
         สร้าง license ฟรีให้เพื่อน — บันทึกเป็นออร์เดอร์ 0 บาท ไม่ปนกับยอดขาย Stripe
@@ -66,7 +64,7 @@ export default async function Admin() {
                     <>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
-                          used.has(r.key) ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                          used.has(r.key) ? "bg-brand-100 text-brand-700" : "bg-amber-100 text-amber-700"
                         }`}
                       >
                         {used.has(r.key) ? "ใช้งานแล้ว" : "ยังไม่ใช้"}

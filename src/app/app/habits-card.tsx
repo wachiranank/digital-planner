@@ -47,7 +47,7 @@ export function HabitsCard({ habits, today }: { habits: HabitData[]; today: stri
               <button
                 onClick={() => start(() => toggleHabit(h.id, today, !doneToday))}
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base ring-1 ${
-                  doneToday ? "bg-emerald-600 text-white ring-emerald-600" : "bg-white ring-stone-300"
+                  doneToday ? "bg-brand-600 text-white ring-brand-600" : "bg-white ring-stone-300"
                 }`}
                 aria-pressed={doneToday}
                 aria-label={`${h.name} วันนี้`}
@@ -62,7 +62,7 @@ export function HabitsCard({ habits, today }: { habits: HabitData[]; today: stri
                       key={d}
                       onClick={() => start(() => toggleHabit(h.id, d, !set.has(d)))}
                       title={d}
-                      className={`h-4 w-4 rounded-sm text-[9px] leading-4 ${set.has(d) ? "bg-emerald-500 text-white" : "bg-stone-100 text-stone-400"}`}
+                      className={`h-4 w-4 rounded-sm text-[9px] leading-4 ${set.has(d) ? "bg-brand-500 text-white" : "bg-stone-100 text-stone-400"}`}
                     >
                       {dow(d)}
                     </button>
@@ -90,7 +90,7 @@ export function HabitsCard({ habits, today }: { habits: HabitData[]; today: stri
             placeholder={habits.length ? "เพิ่มนิสัยใหม่" : "เช่น ดื่มน้ำ 8 แก้ว, ออกกำลังกาย"}
             className="min-w-0 flex-1 rounded-md border border-stone-300 px-2 py-1.5"
           />
-          <button className="rounded-md bg-emerald-600 px-3 font-medium text-white">เพิ่ม</button>
+          <button className="rounded-md bg-brand-600 px-3 font-medium text-white">เพิ่ม</button>
         </form>
       )}
     </section>
