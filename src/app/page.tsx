@@ -101,7 +101,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ n
         <p className="mt-6 text-center text-sm text-stone-500">
           <a href="/privacy" className="underline">นโยบายความเป็นส่วนตัว</a> ·{" "}
           <a href="/terms" className="underline">เงื่อนไขการใช้งาน</a> ·{" "}
-          <a href="mailto:support@claudecoach.online" className="underline">support@claudecoach.online</a>
+          <a href="mailto:wachiranan.khanngern@gmail.com" className="underline">wachiranan.khanngern@gmail.com</a>
         </p>
         {/* for Google's OAuth reviewers (and English readers): what the app is and why it uses Calendar */}
         <p lang="en" className="mx-auto mt-4 max-w-xl text-center text-xs leading-relaxed text-stone-500">
