@@ -98,12 +98,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ n
             </div>
           ))}
         </dl>
-        {storeUrl && (
-          <p className="mt-6 text-center text-sm text-stone-500">
-            <a href={`${storeUrl}/privacy`} className="underline">นโยบายความเป็นส่วนตัว</a> ·{" "}
-            <a href={`${storeUrl}/terms`} className="underline">เงื่อนไขการใช้งาน</a>
-          </p>
-        )}
+        <p className="mt-6 text-center text-sm text-stone-500">
+          <a href="/privacy" className="underline">นโยบายความเป็นส่วนตัว</a> ·{" "}
+          <a href="/terms" className="underline">เงื่อนไขการใช้งาน</a> ·{" "}
+          <a href="mailto:support@claudecoach.online" className="underline">support@claudecoach.online</a>
+        </p>
+        {/* for Google's OAuth reviewers (and English readers): what the app is and why it uses Calendar */}
+        <p lang="en" className="mx-auto mt-4 max-w-xl text-center text-xs leading-relaxed text-stone-500">
+          Digital Planner by ClaudeCoach is a Thai daily planner. Sign in with Google, plan your day, and optionally connect Google
+          Calendar: tasks you give a time are added to your calendar, and your events appear in the planner so you can plan around them.{" "}
+          <a href="/privacy" className="underline">Privacy Policy</a> · <a href="/terms" className="underline">Terms of Service</a>
+        </p>
       </section>
     </main>
   );
