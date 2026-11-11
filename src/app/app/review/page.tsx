@@ -73,12 +73,12 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
   const range = `${fmt(monday, { day: "numeric", month: "short" })} – ${fmt(sunday, { day: "numeric", month: "short", year: "numeric" })}`;
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-6 md:py-10">
+    <main className="mx-auto max-w-5xl px-5 pb-10 pt-6 lg:px-10 lg:pt-8">
 
       <header className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-stone-500">ทบทวน{offset === 0 ? "สัปดาห์นี้" : `ย้อนหลัง ${-offset} สัปดาห์`}</p>
-          <h1 className="text-2xl font-bold">{range}</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight">{range}</h1>
         </div>
         <div className="flex gap-2 text-sm">
           <Link href={`/app/review?w=${offset - 1}`} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-stone-300">

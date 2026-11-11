@@ -33,8 +33,8 @@ export default async function Admin() {
   const appUrl = process.env.APP_URL || "";
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-6 md:py-10">
-      <h1 className="mt-6 text-2xl font-bold">🛠️ Admin</h1>
+    <main className="mx-auto max-w-2xl px-5 pb-10 pt-6 lg:px-10 lg:pt-8">
+      <h1 className="text-[32px] font-bold leading-tight tracking-tight">Admin</h1>
       <p className="mt-1 text-sm text-stone-500">
         สร้าง license ฟรีให้เพื่อน — บันทึกเป็นออร์เดอร์ 0 บาท ไม่ปนกับยอดขาย Stripe
       </p>

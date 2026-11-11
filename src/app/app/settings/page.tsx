@@ -50,8 +50,8 @@ export default async function Settings() {
   const line = lineConfigured() && !!lineBotId();
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-6 md:py-10">
-      <h1 className="mt-6 text-2xl font-bold">ตั้งค่า</h1>
+    <main className="mx-auto max-w-2xl px-5 pb-10 pt-6 lg:px-10 lg:pt-8">
+      <h1 className="text-[32px] font-bold leading-tight tracking-tight">ตั้งค่า</h1>
 
       <nav className="mt-3 flex flex-wrap gap-2 text-sm">
         {[

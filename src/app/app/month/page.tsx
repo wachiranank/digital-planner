@@ -91,13 +91,13 @@ export default async function Month({ searchParams }: { searchParams: Promise<{ 
   const href = (d: string) => `/app/month?${offset ? `m=${offset}&` : ""}d=${d}`;
 
   return (
-    <main className="mx-auto max-w-[1400px] px-5 py-6 md:py-10">
+    <main className="mx-auto max-w-[1400px] px-5 pb-10 pt-6 lg:px-8 lg:pt-8">
       <ViewSwitch active="month" />
 
       <header className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-stone-500">{offset === 0 ? "เดือนนี้" : offset > 0 ? `อีก ${offset} เดือน` : `${-offset} เดือนก่อน`}</p>
-          <h1 className="text-2xl font-bold">{monthTitle(first)}</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight">{monthTitle(first)}</h1>
         </div>
         <div className="flex gap-2 text-sm">
           <Link href={`/app/month?m=${offset - 1}`} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-stone-300">

@@ -7,6 +7,7 @@ import { addTask } from "../actions";
 import { getTags } from "@/lib/tags-server";
 import { ViewSwitch } from "../view-switch";
 import { WeekTask, type WeekTaskData } from "./week-task";
+import { TaskRow } from "../task-row";
 import { ensureRecurring } from "@/lib/tasks";
 
 export const dynamic = "force-dynamic";
@@ -70,9 +71,109 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
   const range = `${fmt(monday, { day: "numeric", month: "short" })} – ${fmt(sunday, { day: "numeric", month: "short", year: "numeric" })}`;
   const doneCount = tasks.filter((t) => t.done).length;
 
+  // ---- phones/tablets: week strip + day-grouped list (like the mockup) ----
+  const { count: inboxCount } = await supabase
+    .from("planner_tasks")
+    .select("id", { count: "exact", head: true })
+    .is("day", null)
+    .eq("done", false);
+  const LETTERS = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
+  // this week: from today on (earlier days are done with); other weeks: every day
+  const listDays = days.filter((d) => offset !== 0 || d >= today);
+  const dayHeading = (d: string) =>
+    [
+      fmt(d, { day: "numeric", month: "short" }),
+      d === today ? "วันนี้" : d === addDays(today, 1) ? "พรุ่งนี้" : null,
+      fmt(d, { weekday: "long" }),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  const monthLabel = fmt(offset === 0 ? today : monday, { month: "long", year: "numeric" });
+
   return (
-    <main className="mx-auto max-w-[1400px] px-5 py-6 md:py-10">
-      <ViewSwitch active="week" />
+    <>
+    <main className="px-5 pb-10 pt-6 lg:hidden">
+      <div className="flex items-center justify-between">
+        <h1 className="text-[28px] font-bold tracking-tight">กำหนดการ</h1>
+        <ViewSwitch active="week" />
+      </div>
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <Link href={`/app/week?w=${offset - 1}`} aria-label="สัปดาห์ก่อน" className="flex h-10 w-10 items-center justify-center rounded-full text-stone-600 hover:bg-stone-200/60">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
+          </Link>
+          <span className="text-lg font-semibold">{monthLabel}</span>
+          <Link href={`/app/week?w=${offset + 1}`} aria-label="สัปดาห์ถัดไป" className="flex h-10 w-10 items-center justify-center rounded-full text-stone-600 hover:bg-stone-200/60">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
+          </Link>
+        </div>
+        <Link href="/app/inbox" className="text-[15px] text-brand-700">
+          ไม่มีวัน ({inboxCount ?? 0})
+        </Link>
+      </div>
+
+      <div className="mt-3 grid grid-cols-7 text-center text-[13px] text-stone-500">
+        {LETTERS.map((l) => (
+          <span key={l}>{l}</span>
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-7 justify-items-center">
+        {days.map((d) => {
+          const has = tasks.some((t) => t.day === d && !t.done) || otherEvents.some((e) => eventDay(e) === d);
+          return (
+            <a key={d} href={`#d-${d}`} className="flex flex-col items-center gap-1 py-1" aria-label={dayHeading(d)}>
+              <span
+                className={`flex h-11 w-11 items-center justify-center rounded-full text-lg ${
+                  d === today ? "bg-brand-600 font-semibold text-white" : d < today ? "text-stone-400" : "text-stone-900"
+                }`}
+              >
+                {Number(d.slice(8))}
+              </span>
+              <span className={`h-1 w-1 rounded-full ${has ? "bg-stone-400" : ""}`} />
+            </a>
+          );
+        })}
+      </div>
+      {offset !== 0 && (
+        <Link href="/app/week" className="mt-1 block text-center text-sm text-brand-700">
+          กลับมาสัปดาห์นี้
+        </Link>
+      )}
+      <div className="mt-3 border-t border-stone-200" />
+
+      {listDays.map((d) => {
+        const dayTasks = tasks.filter((t) => t.day === d);
+        const dayEvents = otherEvents.filter((e) => eventDay(e) === d);
+        if (!dayTasks.length && !dayEvents.length && d !== today) return null;
+        return (
+          <section key={d} id={`d-${d}`} className="scroll-mt-4">
+            <h2 className="mb-1 mt-6 text-base font-semibold">{dayHeading(d)}</h2>
+            {dayEvents.length > 0 && (
+              <ul className="mb-1 space-y-1">
+                {dayEvents.map((e) => (
+                  <li key={e.id} className="flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-1.5 text-sm text-sky-900">
+                    <span className="tabular-nums">{e.start.dateTime ? hhmm(e.start.dateTime) : "ทั้งวัน"}</span>
+                    <span className="truncate">{e.summary ?? "(ไม่มีชื่อ)"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <ul>
+              {dayTasks.length === 0 && <li className="py-2 text-[13px] text-stone-400">ว่าง</li>}
+              {dayTasks.map((t) => (
+                <TaskRow key={t.id} task={t} calendar={!!token} tags={tags} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+      {listDays.every((d) => d !== today && !tasks.some((t) => t.day === d) && !otherEvents.some((e) => eventDay(e) === d)) && (
+        <p className="py-10 text-center text-sm text-stone-400">สัปดาห์นี้ยังไม่มีงาน — กดปุ่ม + เพื่อเพิ่ม</p>
+      )}
+    </main>
+
+    {/* laptops: 7 columns */}
+    <main className="mx-auto hidden max-w-[1400px] px-8 py-8 lg:block">
 
       <header className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -144,5 +245,6 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
         })}
       </div>
     </main>
+    </>
   );
 }
