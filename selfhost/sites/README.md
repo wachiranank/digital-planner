@@ -23,3 +23,8 @@ The Caddy in this kit owns ports 80/443. To publish another app that runs on the
    }
    ```
 3. `docker compose restart caddy`
+
+## n8n (VPS template "Ubuntu 24.04 with n8n")
+
+`n8n.caddy` + `../scripts/n8n-connect.sh n8n.claudecoach.online` move the template's n8n behind this Caddy
+(backs up data first, joins `edge` as `n8n`, sets N8N_HOST / WEBHOOK_URL, disables the template's Traefik).
