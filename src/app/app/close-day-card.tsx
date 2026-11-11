@@ -26,7 +26,7 @@ export function CloseDayCard({
   return (
     <section
       id="close-day"
-      className={`mt-5 scroll-mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4 shadow-sm ring-1 ring-indigo-100 sm:p-5 ${
+      className={`mt-5 scroll-mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 via-white to-amber-50 p-4 shadow-sm ring-1 ring-brand-100 sm:p-5 ${
         pending ? "opacity-70" : ""
       }`}
     >
@@ -43,9 +43,9 @@ export function CloseDayCard({
           <button
             disabled={pending}
             onClick={() => start(() => moveLeftoversTomorrow())}
-            className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-full bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
           >
-            ➡️ ย้ายไปพรุ่งนี้ทั้งหมด
+            ย้ายไปพรุ่งนี้ทั้งหมด
           </button>
         </div>
       )}
@@ -75,7 +75,7 @@ export function CloseDayCard({
                 setSaved(false);
               }}
               className={`flex h-10 w-10 items-center justify-center rounded-full text-xl transition ${
-                sel === m.v ? "scale-110 bg-white shadow ring-2 ring-indigo-400" : "bg-white/60 opacity-60 hover:opacity-100"
+                sel === m.v ? "scale-110 bg-white shadow ring-2 ring-brand-400" : "bg-white/60 opacity-60 hover:opacity-100"
               }`}
             >
               {m.e}

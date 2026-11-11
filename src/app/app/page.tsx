@@ -139,8 +139,8 @@ export default async function PlannerToday() {
   const greeting = hour < 12 ? "สวัสดีตอนเช้า" : hour < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
   const firstName = (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? "";
   const cal = !!token;
-  // "ปิดวัน" shows from 17:00 (or once something was written for today)
-  const showCloseDay = hour >= 17 || !!(dayNote?.mood || dayNote?.note);
+  // "ปิดวัน" is an evening ritual: from 17:00
+  const showCloseDay = hour >= 17;
   const todays = tasks.filter((t) => t.day === today);
   // "6 งาน · 3 ชม. 30 นาที · เสร็จ 1"
   const plannedMin = tasks
