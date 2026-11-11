@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const OPERATOR_TH = "ClaudeCoach โดย วชิรานันท์ ขันเงิน";
 export const OPERATOR_EN = "ClaudeCoach, operated by Wachiranan Khanngern";
-export const SUPPORT_EMAIL = "support@claudecoach.online";
+export const SUPPORT_EMAIL = "wachiranan.khanngern@gmail.com";
 export const UPDATED_TH = "11 พฤศจิกายน 2569";
 export const UPDATED_EN = "November 11, 2026";
 
