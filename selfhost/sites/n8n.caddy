@@ -1,0 +1,4 @@
+# n8n (from the VPS's Hostinger "Ubuntu with n8n" template), joined to the edge network by scripts/n8n-connect.sh
+n8n.claudecoach.online {
+	reverse_proxy n8n:5678
+}
