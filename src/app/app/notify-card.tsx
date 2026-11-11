@@ -94,7 +94,7 @@ export function NotifyCard({
           <button
             onClick={enable}
             disabled={pending}
-            className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
+            className="mt-3 rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
           >
             เปิดการแจ้งเตือนบนเครื่องนี้
           </button>
@@ -119,7 +119,7 @@ export function NotifyCard({
             </select>
           </label>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={test} disabled={pending} className="text-emerald-700 underline">
+            <button type="button" onClick={test} disabled={pending} className="text-brand-700 underline">
               ส่งทดสอบ
             </button>
             <button type="button" onClick={disable} disabled={pending} className="text-stone-500 underline">

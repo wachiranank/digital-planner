@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Brand: brick / terracotta (600 = #C2492F). Category colours stay in lib/tags.ts. */
+@theme {
+  --color-brand-50: #fbede9;
+  --color-brand-100: #f7dad2;
+  --color-brand-200: #efb6a6;
+  --color-brand-300: #e48c74;
+  --color-brand-400: #d66a4e;
+  --color-brand-500: #c9553a;
+  --color-brand-600: #c2492f;
+  --color-brand-700: #a23b25;
+  --color-brand-800: #833121;
+  --color-brand-900: #6b2a1e;
+  --color-brand-950: #3a130c;
+  --color-paper: #fbfaf8;
+  --font-sans: "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 body {
-  font-family: "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* floating glass bars (tab bar, sheets) */
+.glass {
+  background: rgb(255 255 255 / 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
 }

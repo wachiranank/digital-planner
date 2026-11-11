@@ -66,7 +66,7 @@ export function TaskModal({
             type="checkbox"
             checked={task.done}
             onChange={(e) => start(() => toggleDone(task.id, e.target.checked))}
-            className="h-5 w-5 accent-emerald-600"
+            className="h-5 w-5 accent-brand-600"
             aria-label="ทำเสร็จแล้ว"
           />
           <p className={`min-w-0 flex-1 truncate font-semibold ${task.done ? "text-stone-400 line-through" : ""}`}>
@@ -140,7 +140,7 @@ export function TaskModal({
                   </option>
                 ))}
               </select>
-              <button className="rounded-md bg-emerald-600 px-3 py-1 font-medium text-white">
+              <button className="rounded-md bg-brand-600 px-3 py-1 font-medium text-white">
                 {scheduled ? "ย้ายเวลา" : "ลงปฏิทิน"}
               </button>
               {scheduled && (

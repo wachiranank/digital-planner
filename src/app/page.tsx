@@ -43,11 +43,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ n
   return (
     <main className="mx-auto max-w-5xl px-5">
       <section className="flex min-h-[85dvh] flex-col justify-center py-12 md:max-w-2xl">
-        <p className="text-sm font-semibold text-emerald-700">Digital Planner ภาษาไทย</p>
+        <p className="text-sm font-semibold text-brand-700">Digital Planner ภาษาไทย</p>
         <h1 className="mt-2 text-4xl font-bold leading-tight md:text-5xl">
           วางแผนวันละ 1 นาที
           <br />
-          <span className="text-emerald-700">ไม่ต้องจดซ้ำสองที่</span>
+          <span className="text-brand-700">ไม่ต้องจดซ้ำสองที่</span>
         </h1>
         <p className="mt-4 text-lg text-stone-600">
           Planner ที่ซิงก์กับ Google Calendar เตือนทาง LINE และยกงานค้างให้อัตโนมัติ ใช้ได้ทั้ง iPad มือถือ และคอม
@@ -69,8 +69,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ n
       </section>
 
       <section className="mx-auto max-w-md pb-16 text-center">
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-2 ring-emerald-500">
-          <p className="text-sm font-semibold text-emerald-700">ราคา Early Bird · 100 คนแรก</p>
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-2 ring-brand-500">
+          <p className="text-sm font-semibold text-brand-700">ราคา Early Bird · 100 คนแรก</p>
           {price && (
             <p className="mt-2 text-4xl font-bold">
               ฿{price} <span className="text-base font-normal text-stone-500">จ่ายครั้งเดียว</span>
@@ -80,7 +80,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ n
           <div className="mt-5 space-y-2">
             <GoogleButton label="ทดลองใช้ฟรีก่อน" next={safeNext} />
             {storeUrl && (
-              <a href={storeUrl} className="block rounded-xl px-4 py-3 font-semibold text-emerald-700 ring-1 ring-emerald-600">
+              <a href={storeUrl} className="block rounded-xl px-4 py-3 font-semibold text-brand-700 ring-1 ring-brand-600">
                 ซื้อเลย (บัตร / พร้อมเพย์)
               </a>
             )}

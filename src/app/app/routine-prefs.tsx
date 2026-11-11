@@ -15,7 +15,7 @@ export function RoutinePrefs({ dailyDigest, eveningReview }: { dailyDigest: bool
         name={name}
         defaultChecked={on}
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
-        className="mt-1 h-5 w-5 shrink-0 accent-emerald-600"
+        className="mt-1 h-5 w-5 shrink-0 accent-brand-600"
       />
     </label>
   );

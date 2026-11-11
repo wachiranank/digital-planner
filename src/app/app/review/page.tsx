@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAccess, todayBangkok } from "@/lib/access";
 import { moveOpenToNextWeek, saveReview } from "../actions";
-import { AppNav } from "../nav";
 import { moodEmoji } from "@/lib/moods";
 
 export const dynamic = "force-dynamic";
@@ -75,7 +74,6 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-6 md:py-10">
-      <AppNav active="review" />
 
       <header className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -95,7 +93,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
       </header>
 
       {prev?.focus && (
-        <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
+        <p className="mt-4 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
           🎯 โฟกัสที่ตั้งไว้สำหรับสัปดาห์นี้: <b>{prev.focus}</b>
         </p>
       )}
@@ -114,9 +112,9 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
             <div key={x.d} className="flex flex-1 flex-col items-center gap-1">
               <span className="text-xs text-stone-500">{x.total ? `${x.done}/${x.total}` : ""}</span>
               <div className="relative w-full max-w-10 rounded-t bg-stone-100" style={{ height: `${(x.total / maxDay) * 96}px` }}>
-                <div className="absolute bottom-0 w-full rounded-t bg-emerald-500" style={{ height: `${x.total ? (x.done / x.total) * 100 : 0}%` }} />
+                <div className="absolute bottom-0 w-full rounded-t bg-brand-500" style={{ height: `${x.total ? (x.done / x.total) * 100 : 0}%` }} />
               </div>
-              <span className={`text-xs ${x.d === today ? "font-bold text-emerald-700" : "text-stone-500"}`}>
+              <span className={`text-xs ${x.d === today ? "font-bold text-brand-700" : "text-stone-500"}`}>
                 {fmt(x.d, { weekday: "short" })}
               </span>
             </div>
@@ -132,7 +130,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
               <li key={h.id} className="flex items-center gap-3 text-sm">
                 <span className="w-40 shrink-0 truncate">{h.label}</span>
                 <div className="h-2 flex-1 rounded-full bg-stone-100">
-                  <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.min(100, (h.count / elapsed) * 100)}%` }} />
+                  <div className="h-2 rounded-full bg-brand-500" style={{ width: `${Math.min(100, (h.count / elapsed) * 100)}%` }} />
                 </div>
                 <span className="w-12 shrink-0 text-right text-stone-500">
                   {h.count}/{elapsed}
@@ -174,7 +172,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
           {open.length > 0 && (
             <form action={moveOpenToNextWeek} className="mt-2">
               <input type="hidden" name="week_start" value={monday} />
-              <button className="text-sm text-emerald-700 underline">ย้ายงานค้างทั้งหมดไปวันจันทร์หน้า →</button>
+              <button className="text-sm text-brand-700 underline">ย้ายงานค้างทั้งหมดไปวันจันทร์หน้า →</button>
             </form>
           )}
         </section>
@@ -201,7 +199,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
         <Field name="wins" label="อะไรที่ไปได้ดีสัปดาห์นี้?" value={review?.wins} />
         <Field name="improve" label="อะไรที่อยากปรับปรุง?" value={review?.improve} />
         <Field name="focus" label="🎯 โฟกัสหลักของสัปดาห์หน้า (1 เรื่อง)" value={review?.focus} rows={1} />
-        <button className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-700">บันทึก</button>
+        <button className="rounded-lg bg-brand-600 px-5 py-2 font-semibold text-white hover:bg-brand-700">บันทึก</button>
       </form>
     </main>
   );

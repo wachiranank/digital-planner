@@ -14,21 +14,21 @@ export function LineCard({ linked, notify, botId }: { linked: boolean; notify: b
 
       {linked ? (
         <div className="space-y-2">
-          <p className="text-emerald-700">✓ เชื่อมแล้ว — พิมพ์ &quot;วันนี้&quot; ในแชทเพื่อดูงานได้ทุกเมื่อ</p>
+          <p className="text-brand-700">✓ เชื่อมแล้ว — พิมพ์ &quot;วันนี้&quot; ในแชทเพื่อดูงานได้ทุกเมื่อ</p>
           <label className="flex items-center justify-between gap-2">
             <span>ส่งแจ้งเตือนทาง LINE</span>
             <input
               type="checkbox"
               defaultChecked={notify}
               onChange={(e) => start(() => setLineNotify(e.currentTarget.checked))}
-              className="h-5 w-5 accent-emerald-600"
+              className="h-5 w-5 accent-brand-600"
             />
           </label>
           <div className="flex gap-3">
             <button
               onClick={() => start(async () => setMsg((await sendTestLine()).ok ? "ส่งแล้ว ✓" : "ส่งไม่สำเร็จ"))}
               disabled={pending}
-              className="text-emerald-700 underline"
+              className="text-brand-700 underline"
             >
               ส่งทดสอบ
             </button>

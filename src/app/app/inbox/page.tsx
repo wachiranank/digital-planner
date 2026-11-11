@@ -4,7 +4,6 @@ import { getAccess } from "@/lib/access";
 import { getAccessToken } from "@/lib/google";
 import { getTags } from "@/lib/tags-server";
 import { addTask } from "../actions";
-import { AppNav } from "../nav";
 import { PlanRow } from "../plan-row";
 import type { Task } from "../task-details";
 
@@ -33,17 +32,15 @@ export default async function InboxPage() {
   const tasks = (data ?? []) as Task[];
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-5 sm:px-6 md:py-8">
-      <AppNav active="inbox" />
-
-      <header className="mt-6">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">📥 Inbox</h1>
+    <main className="mx-auto max-w-2xl px-5 pb-10 pt-6 lg:px-10 lg:pt-8">
+      <header>
+        <h1 className="text-[32px] font-bold leading-tight tracking-tight">Inbox</h1>
         <p className="mt-1 text-sm text-stone-500">จดทุกอย่างที่อยู่ในหัวไว้ที่นี่ก่อน ยังไม่ต้องคิดว่าจะทำวันไหน แล้วค่อยมาเลือกวันทีหลัง</p>
       </header>
 
       <form
         action={addTask}
-        className="mt-5 flex gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-stone-200 focus-within:ring-2 focus-within:ring-emerald-500"
+        className="mt-5 flex gap-2 rounded-xl bg-white p-1.5 ring-1 ring-stone-200 focus-within:ring-2 focus-within:ring-brand-500"
       >
         <input type="hidden" name="inbox" value="1" />
         <input
@@ -54,21 +51,21 @@ export default async function InboxPage() {
           placeholder="จดไว้ก่อน… เช่น ต่อภาษีรถ, หาของขวัญวันเกิดแม่"
           className="min-w-0 flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-stone-400"
         />
-        <button className="rounded-xl bg-emerald-600 px-5 font-semibold text-white hover:bg-emerald-700">จด</button>
+        <button className="rounded-xl bg-brand-600 px-5 font-semibold text-white hover:bg-brand-700">จด</button>
       </form>
       <p className="mt-1.5 px-2 text-xs text-stone-400">
         ถ้าพิมพ์วันมาด้วย (เช่น &quot;พรุ่งนี้&quot;) งานจะไปอยู่วันนั้นเลย · ใน LINE พิมพ์ &quot;จด …&quot; ได้เหมือนกัน
       </p>
 
-      <section className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h2 className="font-semibold">รอเลือกวัน</h2>
+      <section className="mt-7">
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-stone-800">รอเลือกวัน</h2>
           <span className="text-xs text-stone-500">{tasks.length} งาน</span>
         </div>
-        <ul className="divide-y divide-stone-100 border-t border-stone-100">
+        <ul>
           {tasks.length === 0 && (
-            <li className="px-4 py-10 text-center text-sm text-stone-400">
-              Inbox ว่าง 🎉
+            <li className="py-10 text-center text-sm text-stone-400">
+              Inbox ว่าง
               <br />
               นึกอะไรออกก็จดไว้ที่นี่ได้เลย จะได้ไม่ต้องจำ
             </li>

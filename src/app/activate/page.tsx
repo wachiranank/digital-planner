@@ -41,7 +41,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
           autoCapitalize="characters"
           className="w-full rounded-lg border border-stone-300 px-3 py-3 font-mono tracking-wider uppercase"
         />
-        <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700">
+        <button className="w-full rounded-xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700">
           เปิดใช้งาน
         </button>
       </form>

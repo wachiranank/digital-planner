@@ -115,7 +115,7 @@ export function WatchCard({
                   else setError(r.error ?? "");
                 })
               }
-              className="mt-2 rounded-lg bg-emerald-600 px-4 py-1.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="mt-2 rounded-lg bg-brand-600 px-4 py-1.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
               สร้าง token
             </button>

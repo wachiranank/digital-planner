@@ -95,7 +95,7 @@ export function CloseDayCard({
           <button disabled={pending} className="rounded-lg bg-stone-800 px-4 py-1.5 text-sm font-semibold text-white hover:bg-stone-900">
             บันทึก
           </button>
-          {saved && <span className="text-sm text-emerald-700">บันทึกแล้ว ✓ ดูย้อนหลังได้ในหน้า ทบทวน</span>}
+          {saved && <span className="text-sm text-brand-700">บันทึกแล้ว ✓ ดูย้อนหลังได้ในหน้า ทบทวน</span>}
         </div>
       </form>
     </section>

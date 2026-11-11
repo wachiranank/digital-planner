@@ -5,7 +5,7 @@ import { getAccess, todayBangkok } from "@/lib/access";
 import { eventDay, getAccessToken, hhmm, listRangeEvents, type GEvent } from "@/lib/google";
 import { addTask } from "../actions";
 import { getTags } from "@/lib/tags-server";
-import { AppNav } from "../nav";
+import { ViewSwitch } from "../view-switch";
 import { WeekTask, type WeekTaskData } from "./week-task";
 import { ensureRecurring } from "@/lib/tasks";
 
@@ -72,7 +72,7 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
 
   return (
     <main className="mx-auto max-w-[1400px] px-5 py-6 md:py-10">
-      <AppNav active="week" />
+      <ViewSwitch active="week" />
 
       <header className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -106,10 +106,10 @@ export default async function Week({ searchParams }: { searchParams: Promise<{ w
           return (
             <section
               key={day}
-              className={`flex flex-col rounded-xl bg-white p-3 ring-1 ${isToday ? "ring-2 ring-emerald-500" : "ring-stone-200"}`}
+              className={`flex flex-col rounded-xl bg-white p-3 ring-1 ${isToday ? "ring-2 ring-brand-500" : "ring-stone-200"}`}
             >
               <h2 className="flex items-baseline justify-between">
-                <span className={`font-semibold ${isToday ? "text-emerald-700" : ""}`}>{fmt(day, { weekday: "short" })}</span>
+                <span className={`font-semibold ${isToday ? "text-brand-700" : ""}`}>{fmt(day, { weekday: "short" })}</span>
                 <span className="text-sm text-stone-500">{fmt(day, { day: "numeric", month: "short" })}</span>
               </h2>
 
