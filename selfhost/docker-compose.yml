@@ -140,6 +140,8 @@ services:
       LINE_CHANNEL_SECRET: ${PLANNER_LINE_CHANNEL_SECRET:-}
       LINE_CHANNEL_ACCESS_TOKEN: ${PLANNER_LINE_CHANNEL_ACCESS_TOKEN:-}
       LINE_BOT_BASIC_ID: ${PLANNER_LINE_BOT_BASIC_ID:-}
+      SHORTCUT_ADD_URL: ${PLANNER_SHORTCUT_ADD_URL:-}      # iCloud link of the "เพิ่มงาน" Siri Shortcut (optional)
+      SHORTCUT_TODAY_URL: ${PLANNER_SHORTCUT_TODAY_URL:-}  # iCloud link of the "งานวันนี้" Siri Shortcut (optional)
 
   # ---------- reminders every 5 minutes ----------
   cron:
