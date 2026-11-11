@@ -11,6 +11,8 @@ import { signOut } from "../actions";
 import { AppNav } from "../nav";
 import { NotifyCard } from "../notify-card";
 import { RoutinePrefs } from "../routine-prefs";
+import { WatchCard, type TokenRow } from "../watch-card";
+import { appHost } from "@/lib/env";
 import { LineCard } from "../line-card";
 import { TagManager } from "./tag-manager";
 
@@ -33,7 +35,7 @@ export default async function Settings() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const [access, tags, { data: prefs }, token] = await Promise.all([
+  const [access, tags, { data: prefs }, token, { data: apiTokens }] = await Promise.all([
     getAccess(user.id, user.email),
     getTags(supabase),
     supabase
@@ -42,7 +44,9 @@ export default async function Settings() {
       .eq("user_id", user.id)
       .maybeSingle(),
     getAccessToken(user.id),
+    supabase.from("planner_api_tokens").select("id, name, prefix, created_at, last_used_at").order("created_at"),
   ]);
+  const appUrl = (process.env.APP_URL || `https://${appHost()}`).replace(/\/$/, "");
   const vapidKey = process.env.VAPID_PUBLIC_KEY ?? "";
   const line = lineConfigured() && !!lineBotId();
 
@@ -55,6 +59,7 @@ export default async function Settings() {
         {[
           ["#routine", "🌗 เช้า–เย็น"],
           ["#notify", "🔔 การแจ้งเตือน"],
+          ["#watch", "⌚ Apple Watch & Siri"],
           ...(line ? [["#line", "💬 LINE"]] : []),
           ["#calendar", "🗓️ Google Calendar"],
           ["#tags", "🏷️ หมวดหมู่"],
@@ -80,6 +85,15 @@ export default async function Settings() {
           ) : (
             <p className="text-sm text-stone-500">ยังไม่ได้ตั้งค่า</p>
           )}
+        </Section>
+
+        <Section id="watch" title="Apple Watch & Siri" hint="แจ้งเตือนบนข้อมือ และพูดเพิ่มงานด้วย Siri">
+          <WatchCard
+            appUrl={appUrl}
+            tokens={(apiTokens ?? []) as TokenRow[]}
+            shortcutAddUrl={process.env.SHORTCUT_ADD_URL ?? ""}
+            shortcutTodayUrl={process.env.SHORTCUT_TODAY_URL ?? ""}
+          />
         </Section>
 
         {line && (

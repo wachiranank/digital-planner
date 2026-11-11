@@ -25,6 +25,8 @@ export async function AppNav({ active }: { active: "today" | "inbox" | "week" | 
     <nav className="flex items-center justify-between gap-3">
       <div className="flex gap-1 overflow-x-auto rounded-xl bg-stone-200/60 p-1">
         {tab("/app", "วันนี้", active === "today")}
+        {tab("/app/week", "สัปดาห์", active === "week")}
+        {tab("/app/month", "เดือน", active === "month")}
         {tab(
           "/app/inbox",
           <>
@@ -35,8 +37,6 @@ export async function AppNav({ active }: { active: "today" | "inbox" | "week" | 
           </>,
           active === "inbox",
         )}
-        {tab("/app/week", "สัปดาห์", active === "week")}
-        {tab("/app/month", "เดือน", active === "month")}
         {tab("/app/review", "ทบทวน", active === "review")}
       </div>
       <Link

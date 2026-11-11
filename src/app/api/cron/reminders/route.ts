@@ -61,9 +61,11 @@ export async function GET(req: NextRequest) {
     const at = new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }).format(
       new Date(t.start_at),
     );
+    // Watch-friendly: the task itself is in the title (a watch "short look" shows only the title)
+    const name = t.title.length > 40 ? `${t.title.slice(0, 39)}…` : t.title;
     await notifyUser(t.user_id, {
-      title: mins > 0 ? `⏰ อีก ${mins} นาที · ${at} น.` : `⏰ ถึงเวลาแล้ว · ${at} น.`,
-      body: t.title,
+      title: `⏰ ${at} ${name}`,
+      body: mins > 0 ? `อีก ${mins} นาที` : "ถึงเวลาแล้ว",
       url: "/app",
       tag: `task-${t.id}`,
     });
