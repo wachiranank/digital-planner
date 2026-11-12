@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { pushToUser } from "@/lib/push";
 import { linePush } from "@/lib/line";
+import { parseHHMM, ROUTINE_DEFAULTS } from "@/lib/routine";
 
 async function me() {
   const supabase = await supabaseServer();
@@ -58,10 +59,22 @@ export async function setReminderPrefs(form: FormData) {
 /** Morning plan (07:30) and evening "ปิดวัน" (20:00) messages — sent by web push and/or LINE. */
 export async function setRoutinePrefs(form: FormData) {
   const user = await me();
-  await supabaseAdmin()
-    .from("planner_profiles")
-    .update({ daily_digest: form.get("daily_digest") === "on", evening_review: form.get("evening_review") === "on" })
-    .eq("user_id", user.id);
+  let days = 0;
+  for (let d = 0; d < 7; d++) if (form.get(`day_${d}`) === "on") days |= 1 << d;
+  const dow = Number(form.get("review_dow"));
+  const update: Record<string, unknown> = {
+    daily_digest: form.get("daily_digest") === "on",
+    evening_review: form.get("evening_review") === "on",
+    weekly_review: form.get("weekly_review") === "on",
+    routine_days: days || ROUTINE_DEFAULTS.routine_days, // no day ticked = every day
+  };
+  // a half-typed time is ignored (keeps the saved one)
+  for (const k of ["morning_time", "evening_time", "review_time"] as const) {
+    const m = parseHHMM(form.get(k));
+    if (m !== null) update[k] = m;
+  }
+  if (Number.isInteger(dow) && dow >= 0 && dow <= 6) update.review_dow = dow;
+  await supabaseAdmin().from("planner_profiles").update(update).eq("user_id", user.id);
   revalidatePath("/app", "layout");
 }
 

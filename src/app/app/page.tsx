@@ -13,6 +13,7 @@ import { HabitsCard, type HabitData } from "./habits-card";
 import { PlanRow, RolloverAllButtons } from "./plan-row";
 import { CloseDayCard } from "./close-day-card";
 import { ensureRecurring, addDays } from "@/lib/tasks";
+import { withDefaults } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function PlannerToday() {
   await ensureRecurring(user.id, addDays(today, 6));
   // Today's tasks + unfinished one-off tasks from earlier days (auto carry-over;
   // a missed repeating task does not pile up — the next copy is already scheduled)
-  const [{ data }, { data: habitRows }, { data: dayNote }, { data: inboxRows }] = await Promise.all([
+  const [{ data }, { data: habitRows }, { data: dayNote }, { data: inboxRows }, { data: routine }] = await Promise.all([
     supabase
       .from("planner_tasks")
       .select("id, title, day, is_priority, done, start_at, end_at, gcal_event_id, notes, tag, checklist, recur_id, recur:planner_recurring(rule, active)")
@@ -51,6 +52,7 @@ export default async function PlannerToday() {
       .eq("done", false)
       .order("created_at", { ascending: false })
       .limit(50),
+    supabase.from("planner_profiles").select("evening_time").eq("user_id", user.id).maybeSingle(),
   ]);
   const tags = await getTags(supabase);
   const tasks = (data ?? []).map((t) => ({
@@ -139,8 +141,9 @@ export default async function PlannerToday() {
   const greeting = hour < 12 ? "สวัสดีตอนเช้า" : hour < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
   const firstName = (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? "";
   const cal = !!token;
-  // "ปิดวัน" is an evening ritual: from 17:00
-  const showCloseDay = hour >= 17;
+  // "ปิดวัน" is an evening ritual: the card appears 3 h before the user's close-the-day time (20:00 → from 17:00)
+  const nowMin = hour * 60 + Number(new Intl.DateTimeFormat("en-GB", { minute: "2-digit", timeZone: "Asia/Bangkok" }).format(new Date()));
+  const showCloseDay = nowMin >= Math.max(0, withDefaults(routine).evening_time - 180);
   const todays = tasks.filter((t) => t.day === today);
   // "6 งาน · 3 ชม. 30 นาที · เสร็จ 1"
   const plannedMin = tasks
