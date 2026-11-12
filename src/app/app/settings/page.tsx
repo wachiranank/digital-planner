@@ -10,6 +10,7 @@ import { GoogleButton } from "../../google-button";
 import { signOut } from "../actions";
 import { NotifyCard } from "../notify-card";
 import { RoutinePrefs } from "../routine-prefs";
+import { withDefaults } from "@/lib/routine";
 import { WatchCard, type TokenRow } from "../watch-card";
 import { appHost } from "@/lib/env";
 import { LineCard } from "../line-card";
@@ -39,7 +40,7 @@ export default async function Settings() {
     getTags(supabase),
     supabase
       .from("planner_profiles")
-      .select("remind_minutes, daily_digest, evening_review, line_user_id, line_notify, license_key")
+      .select("remind_minutes, daily_digest, evening_review, morning_time, evening_time, routine_days, weekly_review, review_dow, review_time, line_user_id, line_notify, license_key")
       .eq("user_id", user.id)
       .maybeSingle(),
     getAccessToken(user.id),
@@ -70,11 +71,11 @@ export default async function Settings() {
       </nav>
 
       <div className="mt-8 space-y-10">
-        <Section id="routine" title="ตัวช่วยวางแผนรายวัน" hint="ส่งทางแจ้งเตือนบนเครื่องและ LINE (ถ้าเชื่อมไว้)">
-          <RoutinePrefs dailyDigest={prefs?.daily_digest ?? true} eveningReview={prefs?.evening_review ?? true} />
+        <Section id="routine" title="ตัวช่วยวางแผนรายวัน" hint="ตั้งเวลาและวันได้เอง — ส่งทางแจ้งเตือนบนเครื่องและ LINE (ถ้าเชื่อมไว้)">
+          <RoutinePrefs {...withDefaults(prefs)} dailyDigest={prefs?.daily_digest ?? true} eveningReview={prefs?.evening_review ?? true} />
         </Section>
 
-        <Section id="notify" title="การแจ้งเตือนบนเครื่อง" hint="เตือนก่อนเริ่มงาน สรุปงานตอนเช้า และชวนทบทวนทุกวันอาทิตย์">
+        <Section id="notify" title="การแจ้งเตือนบนเครื่อง" hint="เตือนก่อนเริ่มงาน สรุปงานตอนเช้า และชวนทบทวนสัปดาห์ ตามเวลาที่ตั้งไว้ด้านบน">
           {vapidKey ? (
             <NotifyCard
               vapidKey={vapidKey}
